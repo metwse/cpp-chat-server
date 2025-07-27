@@ -11,6 +11,7 @@ extern "C" {
 class Server {
 public:
     Server() = delete;
+    ~Server();
     Server(const char *host, uint16_t port);
 
     enum server_result srv_status;

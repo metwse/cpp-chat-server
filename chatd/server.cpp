@@ -10,3 +10,7 @@ extern "C" {
 Server::Server(const char *host, uint16_t port) {
     this->srv_status = server_init(&this->m_srv, host, port);
 }
+
+Server::~Server() {
+    server_destroy(&this->m_srv);
+}

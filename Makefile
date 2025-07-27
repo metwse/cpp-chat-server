@@ -42,10 +42,10 @@ DEBUG_OBJS_CXX = $(patsubst %.oxx,%.debug.oxx,$(OBJS_CXX))
 
 # Release/debug build rules
 $(BUILD_DIR)/$(PROJECT_NAME) build: $(OBJS_C) $(OBJS_CXX)
-	$(CXX) -o $(BUILD_DIR)/$(PROJECT_NAME) $?
+	$(CXX) -o $(BUILD_DIR)/$(PROJECT_NAME) $^
 
 $(BUILD_DIR)/$(PROJECT_NAME).debug build_debug: $(DEBUG_OBJS_C) $(DEBUG_OBJS_CXX)
-	$(CXX) -o $(BUILD_DIR)/$(PROJECT_NAME).debug $?
+	$(CXX) -o $(BUILD_DIR)/$(PROJECT_NAME).debug $^
 
 
 .PHONY: build build_debug run debug clean memleak compile_commands
