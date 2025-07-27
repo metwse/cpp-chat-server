@@ -1,12 +1,15 @@
-extern "C" {
-#include <chatd/c_main.h>
-}
+#include <chatd/server.hpp>
 
+#include <stdlib.h>
 #include <iostream>
 
 
 int main() {
-    std::cout << "Hello, world!" << std::endl;
+    Server server = Server("0.0.0.0", 3001);
 
-    return c_main();
+    if (server.srv_status != 0) {
+        std::cerr << "Failed to start server. enum server_result: " <<
+            server.srv_status << std::endl;
+        return EXIT_FAILURE;
+    }
 }
