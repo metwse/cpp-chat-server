@@ -14,7 +14,7 @@
 struct vec {
 	size_t cap;
 	size_t size;
-	void **data;
+	void **arr;
 };
 
 /**

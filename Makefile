@@ -57,20 +57,27 @@ NONMAIN_CXX_DEBUG_OBJS = $(call rfilter-out,main,$(DEBUG_OBJS_C))
 # Release/debug build rules
 # ---------------------------------------------------------------------------
 $(BUILD_DIR)/$(PROJECT_NAME): $(OBJS_C) $(OBJS_CXX)
-	$(CXX) -o $@ $^
+	$(CXX) -o $@ \
+		$^
 
 $(BUILD_DIR)/$(PROJECT_NAME).debug: $(DEBUG_OBJS_C) $(DEBUG_OBJS_CXX)
-	$(CXX) -o $@ $^
+	$(CXX) -o $@ \
+		$^
 
-$(BUILD_DIR)/tests/%.xx.test: $(NONMAIN_C_DEBUG_OBJS) $(NONMAIN_CXX_DEBUG_OBJS) | $(BUILD_DIR)/tests/%.d
-	$(CXX) -o $@ $^ \
-		$(TXX_FLAGS) \
-		$(patsubst $(BUILD_DIR)/tests/%.xx.test,$(SRC_DIR)/%.test.cpp,$@)
+$(BUILD_DIR)/tests/%.xx.test: $(SRC_DIR)/%.test.cpp \
+	$(NONMAIN_C_DEBUG_OBJS) $(NONMAIN_CXX_DEBUG_OBJS) \
+	| $(BUILD_DIR)/tests/%.d
 
-$(BUILD_DIR)/tests/%.test: $(NONMAIN_C_DEBUG_OBJS) | $(BUILD_DIR)/tests/%.d
-	$(CC) -o $@ $^ \
-		$(T_FLAGS) \
-		$(patsubst $(BUILD_DIR)/tests/%.test,$(SRC_DIR)/%.test.c,$@)
+	$(CXX) $(TXX_FLAGS) \
+		-o $@ \
+		$^
+
+$(BUILD_DIR)/tests/%.test: $(SRC_DIR)/%.test.c \
+	$(NONMAIN_C_DEBUG_OBJS) | $(BUILD_DIR)/tests/%.d
+
+	$(CC) $(T_FLAGS) \
+		-o $@ \
+		$^
 
 .PHONY: run debug clean memleak \
 	build build_debug \
@@ -107,12 +114,12 @@ test_$1: $$(BUILD_DIR)/tests/$1.test
 .PHONY += test_$1 build_test_$1
 endef
 
-$(foreach f,\
-	$(patsubst $(SRC_DIR)/%.test.c,%,$(TEST_SRC_C)),\
+$(foreach f, \
+	$(patsubst $(SRC_DIR)/%.test.c,%,$(TEST_SRC_C)), \
 	$(eval $(call test_rules,$(f))))
 
-$(foreach f,\
-	$(patsubst $(SRC_DIR)/%.test.cpp,%.xx,$(TEST_SRC_CXX)),\
+$(foreach f, \
+	$(patsubst $(SRC_DIR)/%.test.cpp,%.xx,$(TEST_SRC_CXX)), \
 	$(eval $(call test_rules,$(f))))
 # ===========================================================================
 
