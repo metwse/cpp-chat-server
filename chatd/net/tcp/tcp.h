@@ -40,7 +40,7 @@ struct tcp_data {
 /**
  * tcp_on_connection - Callback for when a new TCP connection is accepted
  * @conn: Pointer to the accepted connection
- * @state: User-defined context
+ *e@state: User-defined context
  */
 typedef void (*tcp_on_connection)(struct tcp_connection *conn,
 				  void *state);

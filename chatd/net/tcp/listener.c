@@ -63,9 +63,9 @@ enum tcp_listener_result tcp_listener_accept(const struct tcp_listener *listener
 
 	static socklen_t len = sizeof(struct sockaddr_in);
 
-	int sockfd = accept4(listener->sockfd,
-			     (struct sockaddr *) &stream->remote_addr,
-			     &len, SOCK_NONBLOCK);
+	int sockfd = accept(listener->sockfd,
+			    (struct sockaddr *) &stream->remote_addr,
+			    &len);
 
 	if (sockfd == -1)
 		return TCP_LISTENER_ACCEPT_FAILED;
