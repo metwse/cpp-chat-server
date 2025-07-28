@@ -5,8 +5,8 @@ CXX = g++
 DEBUGGER = gdb
 MEMLEAK_TESTER = valgrind
 
-C_FLAGS=-O2 -Wall -Werror -std=c17 -I.
-T_FLAGS=-O0 -g3 -Wall -std=c17 -D_DEBUG -I.
+C_FLAGS=-O2 -Wall -Werror -D_GNU_SOURCE -std=gnu17 -I.
+T_FLAGS=-O0 -g3 -Wall -std=gnu17 -D_DEBUG -D_GNU_SOURCE -I.
 
 CXX_FLAGS=-O2 -Wall -Werror -std=c++17 -I.
 TXX_FLAGS=-O0 -g3 -Wall -std=c++17 -D_DEBUG -I.

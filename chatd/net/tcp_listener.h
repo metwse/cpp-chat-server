@@ -25,10 +25,22 @@ enum tcp_listener_result {
 
 
 /**
- * tcp_listener_init() - Initializes a tcp_listener for listening on a socket.
- * @listener: Pointer to the tcp_listener instance to initialize
+ * tcp_listener_init() - Initializes a TCP listener socket.
+ * @listener: Pointer to a tcp_listener struct to be initialized.
+ * @host: IP address (as a string) to bind the listener to.
+ * @port: Port number to listen on.
  *
- * Prepares the tcp_listener to start listening on a socket.
+ * Creates and sets up a TCP socket for listening on the given IP address
+ * and port. The function also enables SO_REUSEADDR to allow quick reuse of
+ * the socket after it is closed. The listener is bound to the address and
+ * starts listening with a defined backlog.
+ *
+ * Return:
+ * * TCP_LISTENER_OK - on success
+ * * TCP_LISTENER_INVALID_HOSTNAME - if the IP address is invalid
+ * * TCP_LISTENER_CANNOT_CREATE_SOCKET - if socket() fails
+ * * TCP_LISTENER_CANNOT_BIND_SOCKET - if bind() fails
+ * * TCP_LISTENER_LISTEN_FAILED - if listen() fails
  */
 enum tcp_listener_result tcp_listener_init(struct tcp_listener *listener,
 					   const char *host,

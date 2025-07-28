@@ -20,11 +20,11 @@ Server::~Server() {
     tcp_listener_destroy(&this->m_listener);
 }
 
-class ServerConnection *Server::accept() {
-    ServerConnection *server_connection = new ServerConnection();
+class ServerConnection Server::accept() {
+    ServerConnection server_connection;
 
     enum tcp_listener_result result = tcp_listener_accept(&this->m_listener,
-                                                          &server_connection->m_connection);
+                                                          &server_connection.m_connection);
 
     if (result)
         throw result;
@@ -32,8 +32,8 @@ class ServerConnection *Server::accept() {
     return server_connection;
 }
 
-ServerConnection::ServerConnection() {};
-
 ServerConnection::~ServerConnection() {
     tcp_stream_destroy(&this->m_connection);
 }
+
+ServerConnection::ServerConnection() {}

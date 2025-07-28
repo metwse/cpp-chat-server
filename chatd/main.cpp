@@ -17,7 +17,7 @@ int main() {
     };
 
     try {
-        server.accept();
+        ServerConnection connection = server.accept();
     } catch (enum tcp_listener_result r) {
         return EXIT_FAILURE;
     };

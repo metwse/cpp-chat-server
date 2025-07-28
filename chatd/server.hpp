@@ -15,7 +15,7 @@ public:
 
     void bind(const char *host, uint16_t port);
 
-    class ServerConnection *accept();
+    class ServerConnection accept();
 
 private:
     struct tcp_listener m_listener = { .sockfd = -1 };
