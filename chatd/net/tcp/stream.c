@@ -1,4 +1,4 @@
-#include <chatd/net/tcp_stream.h>
+#include <chatd/net/tcp/stream.h>
 
 #include <sys/socket.h>
 #include <sys/unistd.h>

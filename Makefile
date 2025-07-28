@@ -11,13 +11,14 @@ T_FLAGS=-O0 -g3 -Wall -std=gnu17 -D_DEBUG -D_GNU_SOURCE -I.
 CXX_FLAGS=-O2 -Wall -Werror -std=c++17 -I.
 TXX_FLAGS=-O0 -g3 -Wall -std=c++17 -D_DEBUG -I.
 
+rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 SRC_DIR = $(PROJECT_NAME)
 BUILD_DIR = target
 OBJ_DIR = $(BUILD_DIR)/obj
 
-SRC_C = $(wildcard $(SRC_DIR)/**/*.c $(SRC_DIR)/*.c)
-SRC_CXX = $(wildcard $(SRC_DIR)/**/*.cpp $(SRC_DIR)/*.cpp)
+SRC_C = $(call rwildcard,$(SRC_DIR)/,*.c)
+SRC_CXX = $(call rwildcard,$(SRC_DIR)/,*.cpp)
 
 
 # Pattern rules for object files

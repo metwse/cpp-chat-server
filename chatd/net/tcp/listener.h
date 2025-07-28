@@ -1,7 +1,7 @@
 #ifndef TCP_LISTENER_H
 #define TCP_LISTENER_H
 
-#include <chatd/net/tcp_stream.h>
+#include <chatd/net/tcp/stream.h>
 #include <stdint.h>
 
 #define TCP_LISTENER_BACKLOG 8

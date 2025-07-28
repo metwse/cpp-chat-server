@@ -1,6 +1,6 @@
 extern "C" {
-#include <chatd/net/tcp_listener.h>
-#include <chatd/net/tcp_stream.h>
+#include <chatd/net/tcp/listener.h>
+#include <chatd/net/tcp/stream.h>
 }
 
 #include <chatd/server.hpp>
