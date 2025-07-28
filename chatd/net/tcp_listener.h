@@ -1,0 +1,58 @@
+#ifndef TCP_LISTENER_H
+#define TCP_LISTENER_H
+
+#include <chatd/net/tcp_stream.h>
+#include <stdint.h>
+
+#define TCP_LISTENER_BACKLOG 8
+
+/**
+ * struct tcp_listener - TCP/IP listener.
+ */
+struct tcp_listener {
+	int sockfd;
+};
+
+enum tcp_listener_result {
+	TCP_LISTENER_OK,
+	TCP_LISTENER_INVALID_HOSTNAME,
+	TCP_LISTENER_CANNOT_CREATE_SOCKET,
+	TCP_LISTENER_CANNOT_BIND_SOCKET,
+	TCP_LISTENER_LISTEN_FAILED,
+	TCP_LISTENER_ACCEPT_FAILED,
+	TCP_LISTENER_UNEXPECTED,
+};
+
+
+/**
+ * tcp_listener_init() - Initializes a tcp_listener for listening on a socket.
+ * @listener: Pointer to the tcp_listener instance to initialize
+ *
+ * Prepares the tcp_listener to start listening on a socket.
+ */
+enum tcp_listener_result tcp_listener_init(struct tcp_listener *listener,
+					   const char *host,
+					   uint16_t port);
+
+/**
+ * tcp_listener_destroy() - Disconnects the tcp_listener from socket.
+ *
+ * Closes all open sockets, disconnects clients, and releases
+ * any allocated resources used by the tcp_listener.
+ */
+enum tcp_listener_result tcp_listener_destroy(struct tcp_listener *);
+
+/**
+ * tcp_listener_accept() - Accepts an incoming TCP connection
+ * @listener: Pointer to the TCP listener instance
+ * @stream: Pointer to a stream that will be initialized upon accepting a
+ *          connection
+ *
+ * Blocks until an incoming connection is received on the listener socket.
+ * If successful, initializes the provided @stream with the accepted
+ * connection's socket descriptor and peer address.
+ */
+enum tcp_listener_result tcp_listener_accept(const struct tcp_listener *listener,
+					     struct tcp_stream *stream);
+
+#endif

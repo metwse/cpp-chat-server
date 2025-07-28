@@ -2,7 +2,8 @@
 #define SERVER_HPP
 
 extern "C" {
-#include <chatd/net/server.h>
+#include <chatd/net/tcp_listener.h>
+#include <chatd/net/tcp_stream.h>
 }
 
 #include <stdint.h>
@@ -10,14 +11,26 @@ extern "C" {
 
 class Server {
 public:
-    Server() = delete;
     ~Server();
-    Server(const char *host, uint16_t port);
 
-    enum server_result srv_status;
+    void bind(const char *host, uint16_t port);
+
+    class ServerConnection *accept();
 
 private:
-    struct server m_srv;
+    struct tcp_listener m_listener = { .sockfd = -1 };
+};
+
+
+class ServerConnection {
+public:
+    ~ServerConnection();
+
+private:
+    ServerConnection();
+    struct tcp_stream m_connection;
+
+    friend Server;
 };
 
 #endif

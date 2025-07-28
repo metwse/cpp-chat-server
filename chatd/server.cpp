@@ -1,5 +1,6 @@
 extern "C" {
-#include <chatd/net/server.h>
+#include <chatd/net/tcp_listener.h>
+#include <chatd/net/tcp_stream.h>
 }
 
 #include <chatd/server.hpp>
@@ -7,10 +8,32 @@ extern "C" {
 #include <stdint.h>
 
 
-Server::Server(const char *host, uint16_t port) {
-    this->srv_status = server_init(&this->m_srv, host, port);
+void Server::bind(const char *host, uint16_t port) {
+    enum tcp_listener_result result = tcp_listener_init(&this->m_listener,
+                                                        host, port);
+
+    if (result)
+        throw result;
 }
 
 Server::~Server() {
-    server_destroy(&this->m_srv);
+    tcp_listener_destroy(&this->m_listener);
+}
+
+class ServerConnection *Server::accept() {
+    ServerConnection *server_connection = new ServerConnection();
+
+    enum tcp_listener_result result = tcp_listener_accept(&this->m_listener,
+                                                          &server_connection->m_connection);
+
+    if (result)
+        throw result;
+
+    return server_connection;
+}
+
+ServerConnection::ServerConnection() {};
+
+ServerConnection::~ServerConnection() {
+    tcp_stream_destroy(&this->m_connection);
 }

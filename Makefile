@@ -64,7 +64,7 @@ clean:
 
 # Exports compile commands
 compile_commands: clean
-	bear -- $(MAKE) build_debug build
+	bear -- $(MAKE) build_debug
 
 # Directory creation
 .SECONDARY:

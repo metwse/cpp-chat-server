@@ -1,3 +1,4 @@
+#include <chatd/net/tcp_listener.h>
 #include <chatd/server.hpp>
 
 #include <stdlib.h>
@@ -5,11 +6,19 @@
 
 
 int main() {
-    Server server = Server("0.0.0.0", 3001);
+    Server server;
 
-    if (server.srv_status != 0) {
+    try {
+        server.bind("0.0.0.0", 3001);
+    } catch (enum tcp_listener_result r) {
         std::cerr << "Failed to start server. enum server_result: " <<
-            server.srv_status << std::endl;
+            r << std::endl;
         return EXIT_FAILURE;
-    }
+    };
+
+    try {
+        server.accept();
+    } catch (enum tcp_listener_result r) {
+        return EXIT_FAILURE;
+    };
 }
