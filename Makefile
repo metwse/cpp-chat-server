@@ -51,7 +51,7 @@ DEBUG_OBJS_CXX = $(patsubst %.oxx,%.debug.oxx,$(OBJS_CXX))
 
 # Object files except main. Used in testing
 NONMAIN_C_DEBUG_OBJS = $(call rfilter-out,main,$(DEBUG_OBJS_C))
-NONMAIN_CXX_DEBUG_OBJS = $(call rfilter-out,main,$(DEBUG_OBJS_C))
+NONMAIN_CXX_DEBUG_OBJS = $(call rfilter-out,main,$(DEBUG_OBJS_CXX))
 
 
 # Release/debug build rules

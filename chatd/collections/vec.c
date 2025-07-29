@@ -37,18 +37,28 @@ enum vec_result vec_shrink(struct vec *v, size_t cap, struct vec *dst)
 	else if (v->cap == cap)
 		return VEC_OK;
 
-	if (!(dst == NULL || cap >= v->size) &&
-	    (vec_expand(dst, v->size - cap) != VEC_NOMEM)) {
-		for (int i = 0; i < v->size - cap; i++)
-			dst->arr[i] = v->arr[cap + i];
-		dst->size = v->size - cap;
+	if (dst != NULL) {
+		if (cap < v->size &&
+		    (vec_expand(dst, v->size - cap) != VEC_NOMEM)) {
+			for (int i = 0; i < v->size - cap; i++)
+				dst->arr[i] = v->arr[cap + i];
+			dst->size = v->size - cap;
+		} else {
+			dst->size = dst->cap = 0;
+			dst->arr = NULL;
+		}
 	}
 
 	v->cap = cap;
 	if (v->size > cap)
 		v->size = cap;
 
-	v->arr = realloc(v->arr, sizeof(void *) * cap);
+	if (cap == 0) {
+		free(v->arr);
+		v->arr = NULL;
+	} else {
+		v->arr = realloc(v->arr, sizeof(void *) * cap);
+	}
 
 	return VEC_OK;
 }
