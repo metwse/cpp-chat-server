@@ -109,12 +109,40 @@ enum cresult ringbuffer_push_front(struct ringbuffer *rb, void *e)
 
 enum cresult ringbuffer_pop_front(struct ringbuffer *rb, void **dst)
 {
-	return C_NOT_IMPLEMENTED;
+	if (rb->size == 0)
+		return C_EMPTY;
+
+	if (rb->head == 0)
+		rb->head = rb->cap - 1;
+	else
+		rb->head--;
+
+	*dst = rb->arr[rb->head];
+
+	rb->size--;
+
+	return C_OK;
 }
 
 enum cresult ringbuffer_push_back(struct ringbuffer *rb, void *e)
 {
-	return C_NOT_IMPLEMENTED;
+	if (rb->size == rb->cap) {
+		enum cresult expand_result = ringbuffer_expand(rb,
+					 rb->cap + RINGBUFFER_EXPAND_DELTA);
+		if (expand_result)
+			return expand_result;
+	}
+
+	if (rb->tail == 0)
+		rb->tail = rb->cap - 1;
+	else
+		rb->tail--;
+
+	rb->arr[rb->tail] = e;
+
+	rb->size++;
+
+	return C_OK;
 }
 
 enum cresult ringbuffer_pop_back(struct ringbuffer *rb, void **dst)
