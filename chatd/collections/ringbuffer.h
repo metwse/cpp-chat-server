@@ -16,8 +16,8 @@
  * @arr: Underlying array of void pointers
  *
  * The default usage of this type as a queue is to use `push_back` to add to
- * the queue, and `pop_front` to remove from the queue. `expand` and `insert`
- * push onto the back in this manner.
+ * the queue, and `pop_front` to remove from the queue. `remove`, `expand`, and
+ * `insert` push from the back in this manner.
  */
 struct ringbuffer {
 	size_t cap;

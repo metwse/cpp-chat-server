@@ -193,12 +193,64 @@ enum cresult ringbuffer_expand(struct ringbuffer *rb, size_t cap)
 
 enum cresult ringbuffer_insert(struct ringbuffer *rb, size_t index, void *e)
 {
-	return C_NOT_IMPLEMENTED;
+	if (index > rb->size)
+		return C_OUT_OF_BOUNDS;
+
+	if (rb->size == rb->cap) {
+		enum cresult expand_result = ringbuffer_expand(rb,
+					 rb->cap + RINGBUFFER_EXPAND_DELTA);
+		if (expand_result)
+			return expand_result;
+	}
+
+	size_t cursor = rb->head, prev;
+	for (size_t i = 0; i < rb->size - index; i++) {
+		if (cursor == 0)
+			prev = rb->cap - 1;
+		else
+			prev = cursor - 1;
+
+		rb->arr[cursor] = rb->arr[prev];
+		cursor = prev;
+	}
+	rb->arr[cursor] = e;
+
+	if (rb->head == rb->cap - 1)
+		rb->head = 0;
+	else
+		rb->head++;
+
+	rb->size++;
+
+	return C_OK;
 }
 
 enum cresult ringbuffer_remove(struct ringbuffer *rb, size_t index, void **dst)
 {
-	return C_NOT_IMPLEMENTED;
+	if (index >= rb->size)
+		return C_OUT_OF_BOUNDS;
+
+	size_t cursor = (rb->tail + index) % rb->cap, next;
+	*dst = rb->arr[cursor];
+
+	for (size_t i = index; i < rb->size; i++) {
+		if (cursor == rb->cap - 1)
+			next = 0;
+		else
+			next = cursor + 1;
+
+		rb->arr[cursor] = rb->arr[next];
+		cursor = next;
+	}
+
+	if (rb->head == 0)
+		rb->head = rb->cap - 1;
+	else
+		rb->head--;
+
+	rb->size--;
+
+	return C_OK;
 }
 
 enum cresult ringbuffer_push_front(struct ringbuffer *rb, void *e)
