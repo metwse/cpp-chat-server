@@ -5,8 +5,14 @@
 #include <time.h>
 #include <assert.h>
 
+
 /**
- * test_push_pop - Test ringbuffer with antagonistic push/pop functions
+ * test_init() - Test ringbuffer initialization
+ */
+void test_init();
+
+/**
+ * test_push_pop() - Test ringbuffer with antagonistic push/pop functions
  * @pop: Pointer to a pop function
  * @push: Pointer to a push function
  *
@@ -17,17 +23,68 @@
 void test_push_pop(enum cresult (*pop)(struct ringbuffer *, void **),
 		   enum cresult (*push)(struct ringbuffer *, void *));
 
+
 int main()
 {
+	srand(time(NULL));
+	test_init();
+
 	test_push_pop(ringbuffer_pop_back, ringbuffer_push_front);
 	test_push_pop(ringbuffer_pop_front, ringbuffer_push_back);
+}
+
+void test_init()
+{
+	struct ringbuffer rb;
+
+	// test: init
+	assert(!ringbuffer_init(&rb));
+	ringbuffer_destroy(&rb);
+
+	// test: init with capacity
+	for (int i = 0; i < 128; i++) {
+		assert(!ringbuffer_with_capacity(&rb, rand() % 256 + 1));
+		ringbuffer_destroy(&rb);
+	}
+
+	// test: init from vec
+	for (int _fuzz = 0; _fuzz < 128; _fuzz++) {
+		size_t size = rand() % 128 + 1;
+		struct vec v;
+		int data[size];
+
+		// used vec_init instead of vec_with_capacity to test vec to
+		// ringbuffer casting when cap != size
+		assert(!vec_init(&v));
+		for (int i = 0; i < size; i++) {
+			data[i] = rand();
+			assert(!vec_push(&v, &data[i]));
+		}
+
+		ringbuffer_from_vec(&rb, &v);
+		for (int i = 0; i < size; i++) {
+			int *out;
+			assert(!ringbuffer_pop_front(&rb, (void **) &out));
+
+			assert(*out == data[size - 1 - i]);
+		}
+
+		ringbuffer_from_vec(&rb, &v);
+		for (int i = 0; i < size; i++) {
+			int *out;
+			assert(!ringbuffer_pop_back(&rb, (void **) &out));
+
+			assert(*out == data[i]);
+		}
+
+		ringbuffer_destroy(&rb);
+	}
 }
 
 void test_push_pop(enum cresult (*pop)(struct ringbuffer *, void **),
 		   enum cresult (*push)(struct ringbuffer *, void *))
 {
 	struct ringbuffer rb;
-	srand(time(NULL));
 
 	int data[1024];
 	for (int i = 0; i < 1024; i++)

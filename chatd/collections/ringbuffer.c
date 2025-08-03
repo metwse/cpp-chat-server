@@ -30,7 +30,10 @@ void ringbuffer_from_vec(struct ringbuffer *rb, const struct vec *src)
 {
 	rb->cap = src->cap;
 	rb->tail = 0;
-	rb->head = src->size - 1;
+	if (src->cap == src->size)
+		rb->head = 0;
+	else
+		rb->head = src->size;
 	rb->size = src->size;
 
 	rb->arr = src->arr;
@@ -39,6 +42,12 @@ void ringbuffer_from_vec(struct ringbuffer *rb, const struct vec *src)
 void ringbuffer_destroy(struct ringbuffer *rb)
 {
 	free(rb->arr);
+}
+
+enum cresult ringbuffer_shrink(struct ringbuffer *rb, size_t cap,
+			       struct vec *dst)
+{
+	return C_NOT_IMPLEMENTED;
 }
 
 enum cresult ringbuffer_expand(struct ringbuffer *rb, size_t cap)
@@ -84,6 +93,16 @@ enum cresult ringbuffer_expand(struct ringbuffer *rb, size_t cap)
 	}
 
 	return C_OK;
+}
+
+enum cresult ringbuffer_insert(struct ringbuffer *rb, size_t index, void *e)
+{
+	return C_NOT_IMPLEMENTED;
+}
+
+enum cresult ringbuffer_remove(struct ringbuffer *rb, size_t index, void **dst)
+{
+	return C_NOT_IMPLEMENTED;
 }
 
 enum cresult ringbuffer_push_front(struct ringbuffer *rb, void *e)
