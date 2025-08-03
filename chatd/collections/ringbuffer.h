@@ -12,6 +12,7 @@
  * @cap: Allocated capacity of the buffer
  * @head: Index of the first element (for popping from front)
  * @tail: Index one past the last element (for pushing to back)
+ * @size: Number of elements in the ringbuffer
  * @arr: Underlying array of void pointers
  *
  * The default usage of this type as a queue is to use `push_back` to add to
@@ -22,6 +23,7 @@ struct ringbuffer {
 	size_t cap;
 	size_t head;
 	size_t tail;
+	size_t size;
 	void **arr;
 };
 
@@ -40,7 +42,7 @@ enum cresult ringbuffer_with_capacity(struct ringbuffer *, size_t cap);
  * ringbuffer_from_vec - Initialize a ringbuffer from a vector
  * @src: Pointer to the vector whose contents will populate the ringbuffer
  */
-enum cresult ringbuffer_from_vec(struct ringbuffer *rb, const struct vec *src);
+void ringbuffer_from_vec(struct ringbuffer *, const struct vec *src);
 
 /**
  * ringbuffer_with_destroy() - Frees arr field of a ring buffer, elements are
@@ -58,6 +60,11 @@ void ringbuffer_destroy(struct ringbuffer *);
  * ring buffer. Trimmed data will be discarded if @dst is NULL.
  */
 enum cresult ringbuffer_shrink(struct ringbuffer *, size_t cap, struct vec *dst);
+
+/**
+ * ringbuffer_expand() - Increases the size of the vec
+ */
+enum cresult ringbuffer_expand(struct ringbuffer *, size_t cap);
 
 /**
  * ringbuffer_insert - Insert an element at the specified index
@@ -78,28 +85,25 @@ enum cresult ringbuffer_insert(struct ringbuffer *, size_t index, void *);
 enum cresult ringbuffer_remove(struct ringbuffer *rb, size_t index, void **dst);
 
 /**
- * ringbuffer_expand() - Increases the size of the vec
- */
-enum cresult ringbuffer_expand(struct ringbuffer *, size_t cap);
-
-/**
  * ringbuffer_push_front() - Push an element to the front of the ringbuffer
  */
-enum cresult ringbuffer_push_front(struct ringbuffer *);
+enum cresult ringbuffer_push_front(struct ringbuffer *, void *);
 
 /**
  * ringbuffer_pop_front() - Remove an element from the front of the ringbuffer
+ * @dst: Out-pointer to store removed element
  */
-enum cresult ringbuffer_pop_front(struct ringbuffer *);
+enum cresult ringbuffer_pop_front(struct ringbuffer *, void **dst);
 
 /**
  * ringbuffer_push_back() - Push an element to the front of the ringbuffer
  */
-enum cresult ringbuffer_push_back(struct ringbuffer *);
+enum cresult ringbuffer_push_back(struct ringbuffer *, void *);
 
 /**
  * ringbuffer_pop_back() - Remove an element from the front of the ringbuffer
+ * @dst: Out-pointer to store removed element
  */
-enum cresult ringbuffer_pop_back(struct ringbuffer *);
+enum cresult ringbuffer_pop_back(struct ringbuffer *, void **dst);
 
 #endif
