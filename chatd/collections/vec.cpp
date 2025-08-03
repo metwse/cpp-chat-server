@@ -1,4 +1,5 @@
 extern "C" {
+#include <chatd/collections/collections.h>
 #include <chatd/collections/vec.h>
 }
 
@@ -6,7 +7,7 @@ extern "C" {
 #include <cstddef>
 
 #define UNWRAP(e) \
-    if (e != VEC_OK) \
+    if (e != C_OK) \
         throw e;
 
 
