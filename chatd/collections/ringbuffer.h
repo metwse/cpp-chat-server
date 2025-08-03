@@ -51,6 +51,15 @@ void ringbuffer_from_vec(struct ringbuffer *, const struct vec *src);
 void ringbuffer_destroy(struct ringbuffer *);
 
 /**
+ * ringbuffer_get() - Get a pointer to an element at a given index in the ring
+ *                    buffer
+ *
+ * Returns a pointer to the element at the specified index. The index is
+ * relative to the current tail position of the buffer.
+ */
+void *ringbuffer_get(struct ringbuffer *, size_t index);
+
+/**
  * ringbuffer_shrink() - Splits the vector by shrinking capacity
  * @cap: New capacity to retain
  * @dst: Vector to receive trimmed elements

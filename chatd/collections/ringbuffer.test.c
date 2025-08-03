@@ -23,6 +23,11 @@ void test_init();
 void test_push_pop(enum cresult (*pop)(struct ringbuffer *, void **),
 		   enum cresult (*push)(struct ringbuffer *, void *));
 
+/**
+ * test_shrink() - Test ringbuffer shrink capability
+ */
+void test_shrink();
+
 
 int main()
 {
@@ -31,6 +36,79 @@ int main()
 
 	test_push_pop(ringbuffer_pop_back, ringbuffer_push_front);
 	test_push_pop(ringbuffer_pop_front, ringbuffer_push_back);
+
+	test_shrink();
+
+}
+
+void test_shrink()
+{
+	struct ringbuffer rb;
+
+	// test: shrink filled ringbuffer, initial head/tail is random
+	for (int _fuzz = 0; _fuzz < 128; _fuzz++) {
+		assert(!ringbuffer_with_capacity(&rb, 64));
+
+		rb.head = rb.tail = rand() % 64;
+
+		int data[64];
+		for (int i = 0; i < 64; i++) {
+			data[i] = rand();
+			assert(!ringbuffer_push_front(&rb, &data[i]));
+		}
+
+		assert(!ringbuffer_shrink(&rb, 32, NULL));
+
+		for (int i = 0; i < 32; i++)
+			assert(ringbuffer_get(&rb, i) == &data[i]);
+
+		for (int i = 0; i < 16; i++) {
+			int *out;
+			assert(!ringbuffer_pop_back(&rb, (void **) &out));
+		}
+
+		for (int i = 0; i < 16; i++)
+			assert(ringbuffer_get(&rb, i) == &data[i + 16]);
+
+		assert(!ringbuffer_shrink(&rb, 8, NULL));
+
+		for (int i = 0; i < 8; i++)
+			assert(ringbuffer_get(&rb, i) == &data[i + 16]);
+
+		ringbuffer_shrink(&rb, 0, NULL);
+	}
+
+	// test: shrink non-filled ringbuffer, initial head/tail is random
+	for (int _fuzz = 0; _fuzz < 128; _fuzz++) {
+		int size = rand() % 32 + 1;
+
+		assert(!ringbuffer_with_capacity(&rb, 64));
+
+		rb.head = rb.tail = rand() % 64;
+
+		int data[size];
+		for (int i = 0; i < size; i++) {
+			data[i] = rand();
+			assert(!ringbuffer_push_front(&rb, &data[i]));
+		}
+
+		struct vec trimmed;
+
+		int new_size = (rand() % 32 + 1) % size;
+		assert(!ringbuffer_shrink(&rb, new_size, &trimmed));
+
+		for (int i = 0; i < new_size; i++)
+			assert(ringbuffer_get(&rb, i) == &data[i]);
+
+		// test: trimmed part copied into the vec
+		if (trimmed.size)
+			for (int i = 0; i < size - new_size; i++)
+				assert(trimmed.arr[i] == &data[new_size + i]);
+
+		vec_destroy(&trimmed);
+
+		ringbuffer_shrink(&rb, 0, NULL);
+	}
 }
 
 void test_init()
@@ -76,6 +154,10 @@ void test_init()
 
 			assert(*out == data[i]);
 		}
+
+		ringbuffer_from_vec(&rb, &v);
+		for (int i = 0; i < size; i++)
+			assert(*(int *) ringbuffer_get(&rb, i) == data[i]);
 
 		ringbuffer_destroy(&rb);
 	}
@@ -140,7 +222,7 @@ void test_push_pop(enum cresult (*pop)(struct ringbuffer *, void **),
 
 	// test: push/pop (auto growing, fuzz)
 	for (int _fuzz = 0; _fuzz < 8; _fuzz++) {
-		ringbuffer_with_capacity(&rb, 4);
+		assert(!ringbuffer_with_capacity(&rb, 4));
 
 		int index = 0;
 		// test scenario:
