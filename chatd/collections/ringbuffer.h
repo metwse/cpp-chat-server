@@ -60,6 +60,22 @@ void ringbuffer_destroy(struct ringbuffer *);
 void *ringbuffer_get(struct ringbuffer *, size_t index);
 
 /**
+ * ringbuffer_dec() - Decrement a ring buffer index with wrap-around.
+ */
+static inline size_t ringbuffer_dec(size_t val, size_t cap)
+{
+	return val == 0 ? cap - 1 : val - 1;
+}
+
+/**
+ * ringbuffer_inc() - Increment a ring buffer index with wrap-around.
+ */
+static inline size_t ringbuffer_inc(size_t val, size_t cap)
+{
+	return val == cap - 1 ? 0 : val + 1;
+}
+
+/**
  * ringbuffer_shrink() - Splits the vector by shrinking capacity
  * @cap: New capacity to retain
  * @dst: Vector to receive trimmed elements

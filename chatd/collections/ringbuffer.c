@@ -96,10 +96,7 @@ enum cresult ringbuffer_shrink(struct ringbuffer *rb, size_t cap,
 				return vec_result;
 
 			for (size_t i = 0; i < stripped_count; i++) {
-				if (rb->head == 0)
-					rb->head = rb->cap - 1;
-				else
-					rb->head--;
+				rb->head = ringbuffer_dec(rb->head, rb->cap);
 				dst->arr[stripped_count - i - 1] = rb->arr[rb->head];
 			}
 		} else {
@@ -205,21 +202,14 @@ enum cresult ringbuffer_insert(struct ringbuffer *rb, size_t index, void *e)
 
 	size_t cursor = rb->head, prev;
 	for (size_t i = 0; i < rb->size - index; i++) {
-		if (cursor == 0)
-			prev = rb->cap - 1;
-		else
-			prev = cursor - 1;
+		prev = ringbuffer_dec(cursor, rb->cap);
 
 		rb->arr[cursor] = rb->arr[prev];
 		cursor = prev;
 	}
 	rb->arr[cursor] = e;
 
-	if (rb->head == rb->cap - 1)
-		rb->head = 0;
-	else
-		rb->head++;
-
+	rb->head = ringbuffer_inc(rb->head, rb->cap);
 	rb->size++;
 
 	return C_OK;
@@ -234,20 +224,13 @@ enum cresult ringbuffer_remove(struct ringbuffer *rb, size_t index, void **dst)
 	*dst = rb->arr[cursor];
 
 	for (size_t i = index; i < rb->size; i++) {
-		if (cursor == rb->cap - 1)
-			next = 0;
-		else
-			next = cursor + 1;
+		next = ringbuffer_inc(cursor, rb->cap);
 
 		rb->arr[cursor] = rb->arr[next];
 		cursor = next;
 	}
 
-	if (rb->head == 0)
-		rb->head = rb->cap - 1;
-	else
-		rb->head--;
-
+	rb->head = ringbuffer_dec(rb->head, rb->cap);
 	rb->size--;
 
 	return C_OK;
@@ -264,11 +247,7 @@ enum cresult ringbuffer_push_front(struct ringbuffer *rb, void *e)
 
 	rb->arr[rb->head] = e;
 
-	if (rb->head == rb->cap - 1)
-		rb->head = 0;
-	else
-		rb->head++;
-
+	rb->head = ringbuffer_inc(rb->head, rb->cap);
 	rb->size++;
 
 	return C_OK;
@@ -279,10 +258,7 @@ enum cresult ringbuffer_pop_front(struct ringbuffer *rb, void **dst)
 	if (rb->size == 0)
 		return C_EMPTY;
 
-	if (rb->head == 0)
-		rb->head = rb->cap - 1;
-	else
-		rb->head--;
+	rb->head = ringbuffer_dec(rb->head, rb->cap);
 
 	*dst = rb->arr[rb->head];
 
@@ -300,10 +276,7 @@ enum cresult ringbuffer_push_back(struct ringbuffer *rb, void *e)
 			return expand_result;
 	}
 
-	if (rb->tail == 0)
-		rb->tail = rb->cap - 1;
-	else
-		rb->tail--;
+	rb->tail = ringbuffer_dec(rb->tail, rb->cap);
 
 	rb->arr[rb->tail] = e;
 
@@ -318,11 +291,8 @@ enum cresult ringbuffer_pop_back(struct ringbuffer *rb, void **dst)
 		return C_EMPTY;
 
 	*dst = rb->arr[rb->tail];
-	if (rb->tail == rb->cap - 1)
-		rb->tail = 0;
-	else
-		rb->tail++;
 
+	rb->tail = ringbuffer_inc(rb->tail, rb->cap);
 	rb->size--;
 
 	return C_OK;

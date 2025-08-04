@@ -48,38 +48,41 @@ int main()
 void test_insert()
 {
 	struct ringbuffer rb;
-	assert(!ringbuffer_with_capacity(&rb, 64));
 
-	rb.head = rb.tail = rand() % 64;
+	for (int _fuzz = 0; _fuzz < 128; _fuzz++) {
+		assert(!ringbuffer_with_capacity(&rb, 64));
 
-	int data[64];
-	for (int i = 0; i < 64; i++)
-		data[i] = rand();
+		rb.head = rb.tail = rand() % 64;
 
-	for (int i = 0; i < 64; i += 2)
-		assert(!ringbuffer_push_front(&rb, &data[i]));
+		int data[64];
+		for (int i = 0; i < 64; i++)
+			data[i] = rand();
 
-	for (int i = 1; i < 64; i += 2)
-		assert(!ringbuffer_insert(&rb, i, &data[i]));
+		for (int i = 0; i < 64; i += 2)
+			assert(!ringbuffer_push_front(&rb, &data[i]));
 
-	for (int i = 0; i < 64; i++)
-		assert(ringbuffer_get(&rb, i) == &data[i]);
+		for (int i = 1; i < 64; i += 2)
+			assert(!ringbuffer_insert(&rb, i, &data[i]));
 
-	for (int i = 63; i > 0; i -= 2) {
-		int *out;
-		assert(!ringbuffer_remove(&rb, i, (void **) &out));
+		for (int i = 0; i < 64; i++)
+			assert(ringbuffer_get(&rb, i) == &data[i]);
 
-		assert(*out == data[i]);
+		for (int i = 63; i > 0; i -= 2) {
+			int *out;
+			assert(!ringbuffer_remove(&rb, i, (void **) &out));
+
+			assert(*out == data[i]);
+		}
+
+		for (int i = 0; i < 64; i += 2) {
+			int *out;
+			assert(!ringbuffer_remove(&rb, 0, (void **) &out));
+
+			assert(*out == data[i]);
+		}
+
+		ringbuffer_destroy(&rb);
 	}
-
-	for (int i = 0; i < 64; i += 2) {
-		int *out;
-		assert(!ringbuffer_remove(&rb, 0, (void **) &out));
-
-		assert(*out == data[i]);
-	}
-
-	ringbuffer_destroy(&rb);
 }
 
 void test_shrink()
