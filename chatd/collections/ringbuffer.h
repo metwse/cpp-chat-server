@@ -27,6 +27,29 @@ struct ringbuffer {
 	void **arr;
 };
 
+#define RINGBUFFER_ITER_BEGIN(rb, i, elem) do { \
+	size_t RINGBUFFER_ ## elem = rb.tail, i; \
+	void *elem; \
+	for (i = 0; i < rb.size; i++) { \
+		elem = rb.arr[RINGBUFFER_ ## elem]; \
+		RINGBUFFER_ ## elem = ringbuffer_inc(RINGBUFFER_ ## elem, \
+						     rb.cap);
+#define RINGBUFFER_ITER_END } } while(0);
+
+#define RINGBUFFER_ITERREV_BEGIN(rb, i, elem) do { \
+	if (rb.size == 0) \
+		break; \
+	size_t RINGBUFFER_ ## elem = rb.head, i; \
+	void *elem; \
+	for (i = rb.size - 1;; i--) { \
+		RINGBUFFER_ ## elem = ringbuffer_dec(RINGBUFFER_ ## elem, \
+						     rb.cap); \
+		elem = rb.arr[RINGBUFFER_ ## elem];
+#define RINGBUFFER_ITERREV_END \
+	if (i == 0) \
+		break; \
+	} } while(0);
+
 
 /**
  * ringbuffer_init() - Initializes a ring buffer with default capacity

@@ -64,8 +64,22 @@ void test_insert()
 		for (int i = 1; i < 64; i += 2)
 			assert(!ringbuffer_insert(&rb, i, &data[i]));
 
-		for (int i = 0; i < 64; i++)
-			assert(ringbuffer_get(&rb, i) == &data[i]);
+		int iter_count = 0;
+		RINGBUFFER_ITER_BEGIN(rb, i, elem);
+		iter_count++;
+		assert(ringbuffer_get(&rb, i) == elem);
+		RINGBUFFER_ITER_END;
+
+		assert(iter_count == 64);
+		iter_count = 0;
+
+		RINGBUFFER_ITERREV_BEGIN(rb, i, elem);
+		iter_count++;
+		assert(ringbuffer_get(&rb, i) == elem);
+		RINGBUFFER_ITERREV_END;
+
+		assert(iter_count == 64);
+
 
 		for (int i = 63; i > 0; i -= 2) {
 			int *out;
