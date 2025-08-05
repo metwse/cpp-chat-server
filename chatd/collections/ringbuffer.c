@@ -44,7 +44,9 @@ void ringbuffer_from_vec(struct ringbuffer *rb, const struct vec *src)
 
 void ringbuffer_destroy(struct ringbuffer *rb)
 {
-	free(rb->arr);
+	if (rb->arr != NULL)
+		free(rb->arr);
+	rb->arr = NULL;
 }
 
 void *ringbuffer_get(struct ringbuffer *rb, size_t index)
@@ -99,6 +101,8 @@ enum cresult ringbuffer_shrink(struct ringbuffer *rb, size_t cap,
 				rb->head = ringbuffer_dec(rb->head, rb->cap);
 				dst->arr[stripped_count - i - 1] = rb->arr[rb->head];
 			}
+
+			dst->size = stripped_count;
 		} else {
 			rb->head = (rb->tail + cap) % rb->cap;
 		}

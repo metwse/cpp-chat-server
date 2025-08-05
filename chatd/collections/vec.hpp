@@ -19,6 +19,8 @@ public:
 
     ~Vec();
 
+    void *operator[](std::size_t i);
+
     Vec shrink(std::size_t cap);
     void expand(std::size_t cap);
 
@@ -28,9 +30,16 @@ public:
     void *remove(std::size_t index);
     void *pop();
 
-    std::size_t get_size() const;
-    std::size_t get_cap() const;
-    void **as_ref();
+
+    std::size_t get_size() const {
+        return this->m_vec.size;
+    }
+    std::size_t get_cap() const {
+        return this->m_vec.cap;
+    }
+    void **operator*() {
+        return this->m_vec.arr;
+    }
 
     /**
      * Vec::operator+() - Concatenates two vectors

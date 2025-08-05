@@ -42,6 +42,6 @@ int main() {
     Vec concation = vec + other_vec;
 
     for (int i = 0; i < 128; i++) {
-        assert(*(int *) concation.as_ref()[i] == data[i]);
+        assert(*(int *) (*concation)[i] == data[i]);
     }
 }

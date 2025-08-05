@@ -25,6 +25,10 @@ Vec::~Vec() {
     vec_destroy(&this->m_vec);
 }
 
+void *Vec::operator[](std::size_t i) {
+    return this->m_vec.arr[i];
+}
+
 Vec Vec::shrink(std::size_t cap) {
     struct vec trailing_part;
 
@@ -61,26 +65,14 @@ void *Vec::pop() {
     return popped;
 }
 
-std::size_t Vec::get_size() const {
-    return this->m_vec.size;
-}
-
-std::size_t Vec::get_cap() const {
-    return this->m_vec.cap;
-}
-
-void **Vec::as_ref() {
-    return this->m_vec.arr;
-}
-
 Vec Vec::operator+(const Vec &other) const {
     Vec vec = Vec(this->get_size() + other.get_size());
 
     for (std::size_t i = 0; i < this->get_size(); i++)
-        vec.as_ref()[i] = this->m_vec.arr[i];
+        (*vec)[i] = this->m_vec.arr[i];
 
     for (std::size_t i = 0; i < other.get_size(); i++)
-        vec.as_ref()[i + this->get_size()] = other.m_vec.arr[i];
+        (*vec)[i + this->get_size()] = other.m_vec.arr[i];
 
     return vec;
 }

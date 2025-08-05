@@ -29,6 +29,7 @@ void vec_destroy(struct vec *v)
 {
 	if (v->arr != NULL)
 		free(v->arr);
+	v->arr = NULL;
 }
 
 enum cresult vec_shrink(struct vec *v, size_t cap, struct vec *dst)
@@ -55,7 +56,8 @@ enum cresult vec_shrink(struct vec *v, size_t cap, struct vec *dst)
 		v->size = cap;
 
 	if (cap == 0) {
-		free(v->arr);
+		if (v->arr != NULL)
+			free(v->arr);
 		v->arr = NULL;
 	} else {
 		v->arr = realloc(v->arr, sizeof(void *) * cap);
