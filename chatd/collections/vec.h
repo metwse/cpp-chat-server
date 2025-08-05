@@ -69,6 +69,18 @@ enum cresult vec_push(struct vec *, void *);
 enum cresult vec_remove(struct vec *, size_t index, void **dst);
 
 /**
+ * vec_remove() - Removes given element, shifts elements left
+ */
+enum cresult vec_remove_by_value(struct vec *, void *e);
+
+/**
+ * vec_find_index() - Finds the index of given element
+ *
+ * Returns `SIZE_MAX` if no element has been found.
+ */
+size_t vec_index_of(struct vec *, void *e);
+
+/**
  * vec_pop() - Removes the last element
  * @dst: Out-pointer to store removed element
  */

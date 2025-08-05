@@ -57,6 +57,14 @@ void *Vec::remove(std::size_t index) {
     return removed;
 }
 
+void Vec::remove_by_value(void *element) {
+    UNWRAP(vec_remove_by_value(&this->m_vec, element));
+}
+
+std::size_t Vec::index_of(void *element) {
+    return vec_index_of(&this->m_vec, element);
+}
+
 void *Vec::pop() {
     void *popped;
 

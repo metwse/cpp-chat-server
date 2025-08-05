@@ -27,9 +27,17 @@ int main() {
     for (int i = 1; i < 128; i += 2)
         vec.insert(i, &data[i]);
 
+    // test: Vec::index_of
+    for (size_t i = 0; i < 128; i++)
+        assert(vec.index_of(&data[i]) == i);
+
     // test: Vec::remove
-    for (int i = 0; i < 128; i++)
+    for (int i = 0; i < 64; i++)
         assert(*(int *) vec.remove(0) == data[i]);
+
+    // test: Vec::remove_by_value
+    for (int i = 64; i < 128; i++)
+        vec.remove_by_value(&data[i]);
 
     Vec other_vec;
 

@@ -1,5 +1,6 @@
 #include <chatd/collections/vec.h>
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
 #include <assert.h>
@@ -65,9 +66,10 @@ int main()
 	vec_destroy(&v);
 
 
+	// test: vec_shrink
 	assert(!vec_with_capacity(&v, 64));
 	struct vec trailing;
-	for (int i = 0; i < 64; i ++)
+	for (int i = 0; i < 64; i++)
 		assert(!vec_push(&v, &data[i]));
 
 	int trimmed = 0;
@@ -82,6 +84,21 @@ int main()
 			       data[128 - trimmed + j]);
 
 		vec_destroy(&trailing);
+	}
+	vec_destroy(&v);
+
+	// test: vec_find_index, vec_remove_by_value
+	assert(!vec_with_capacity(&v, 64));
+	for (int i = 0; i < 64; i++)
+		assert(!vec_push(&v, &data[i]));
+
+	for (int i = 0; i < 64; i++)
+		assert(vec_index_of(&v, &data[i]) == i);
+
+	for (int i = 0; i < 64; i++) {
+		assert(!vec_remove_by_value(&v, &data[i]));
+		assert(v.size == 63 - i);
+		assert(vec_index_of(&v, &data[i]) == SIZE_MAX);
 	}
 
 	vec_destroy(&v);

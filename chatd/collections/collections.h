@@ -11,6 +11,7 @@
  * @C_CAP_LOWER: Attempted to shrink to a larger capacity than current
  * @C_NOT_IMPLEMENTED: The function itself or a part of it has not implemented
  *                     yet
+ * @C_NOT_FOUND: Element not found in the collection
  */
 enum cresult {
 	C_OK,
@@ -20,6 +21,7 @@ enum cresult {
 	C_CAP_GREATER,
 	C_CAP_LOWER,
 	C_NOT_IMPLEMENTED,
+	C_NOT_FOUND,
 };
 
 #endif

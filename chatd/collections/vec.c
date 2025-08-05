@@ -1,7 +1,10 @@
 #include <chatd/collections/collections.h>
 #include <chatd/collections/vec.h>
 
+#include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 
 enum cresult vec_init(struct vec *v)
@@ -42,7 +45,7 @@ enum cresult vec_shrink(struct vec *v, size_t cap, struct vec *dst)
 	if (dst != NULL) {
 		if (cap < v->size &&
 		    (vec_expand(dst, v->size - cap) != C_NOMEM)) {
-			for (int i = 0; i < v->size - cap; i++)
+			for (size_t i = 0; i < v->size - cap; i++)
 				dst->arr[i] = v->arr[cap + i];
 			dst->size = v->size - cap;
 		} else {
@@ -99,7 +102,7 @@ enum cresult vec_insert(struct vec *v, size_t index, void *e)
 			return expand_result;
 	}
 
-	for (int i = v->size; i > index; i--)
+	for (size_t i = v->size; i > index; i--)
 		v->arr[i] = v->arr[i - 1];
 
 	v->arr[index] = e;
@@ -121,12 +124,32 @@ enum cresult vec_remove(struct vec *v, size_t index, void **dst)
 	if (dst != NULL)
 		*dst = v->arr[index];
 
-	for (int i = index; i < v->size - 1; i++)
+	for (size_t i = index; i < v->size - 1; i++)
 		v->arr[i] = v->arr[i + 1];
 
 	v->size--;
 
 	return C_OK;
+}
+
+size_t vec_index_of(struct vec *v, void *e)
+{
+	size_t found_index;
+	bool found = false;
+	for (found_index = 0; found_index < v->size; found_index++)
+		if (v->arr[found_index] == e) {
+			found = true;
+			break;
+		}
+
+	return found ? found_index : SIZE_MAX;
+}
+
+enum cresult vec_remove_by_value(struct vec *v, void *e)
+{
+	size_t i = vec_index_of(v, e);
+
+	return i == SIZE_MAX ? C_NOT_FOUND : vec_remove(v, i, NULL);
 }
 
 enum cresult vec_pop(struct vec *v, void **dst)

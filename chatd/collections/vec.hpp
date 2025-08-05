@@ -28,8 +28,10 @@ public:
     void push(void *element);
 
     void *remove(std::size_t index);
+    void remove_by_value(void *element);
     void *pop();
 
+    size_t index_of(void *element);
 
     std::size_t get_size() const {
         return this->m_vec.size;
