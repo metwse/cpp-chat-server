@@ -26,22 +26,25 @@ void *stream_thread_f(void *arg)
 
 int main()
 {
-	struct tcp_listener listener;
-	pthread_t stream_thread;
+	for (int _fuzz = 0; _fuzz < 16; _fuzz++) {
+		struct tcp_listener listener;
+		pthread_t stream_thread;
 
-	assert(!tcp_listener_init(&listener, TEST_HOST, TEST_PORT));
+		assert(!tcp_listener_init(&listener, TEST_HOST, TEST_PORT));
 
-	pthread_create(&stream_thread, NULL, stream_thread_f, NULL);
+		pthread_create(&stream_thread, NULL, stream_thread_f, NULL);
 
-	struct tcp_stream remote_conn;
-	assert(!tcp_listener_accept(&listener, &remote_conn));
+		struct tcp_stream remote_conn;
+		assert(!tcp_listener_accept(&listener, &remote_conn));
 
-	dprintf(remote_conn.sockfd, "Hello, world!");
+		dprintf(remote_conn.sockfd, "Hello, world!");
 
-	char buff[15] = {};
-	read(remote_conn.sockfd, buff, 15);
+		char buff[15] = {};
+		read(remote_conn.sockfd, buff, 15);
 
-	printf("Received from remote: %s\n", buff);
+		printf("Received from remote: %s\n", buff);
 
-	pthread_join(stream_thread, NULL);
+		pthread_join(stream_thread, NULL);
+		tcp_listener_destroy(&listener);
+	}
 }

@@ -20,6 +20,8 @@ void stream_thread_instantexit()
 {
     struct tcp_stream conn;
     assert(!tcp_stream_init(&conn, TEST_HOST, TEST_PORT));
+
+    tcp_stream_destroy(&conn);
 }
 
 void stream_thread()
@@ -28,6 +30,8 @@ void stream_thread()
     assert(!tcp_stream_init(&conn, TEST_HOST, TEST_PORT));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(rand() % 32));
+
+    tcp_stream_destroy(&conn);
 }
 
 void test() {
@@ -55,7 +59,7 @@ void test() {
         for (int i = 0; i < client_count; i++)
             client_threads[i].join();
 
-        tcp_listener_destroy(&srv.m_listener);
+        assert(!tcp_listener_destroy(&srv.m_listener));
 
         delete[] client_threads;
         srv_thread.join();

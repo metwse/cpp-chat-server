@@ -25,22 +25,27 @@ void ConnectionPool::init_gc() {
 
             for (size_t i = 0; i < this->m_conns.get_size(); i++) {
                 Connection *conn = (Connection *) this->m_conns[i];
-                if (!conn->is_active->load() &&
-                    conn->is_ready->load()) {
+                if (conn->is_active->load() &&
+                    !conn->is_ready->load()) {
                     this->m_conns.remove(i);
+
                     conn->terminate();
+                    conn->m_thread->join();
                     conn->clean();
+
                     i--;
                 }
             }
         }
 
+        std::lock_guard<std::mutex> lock(this->m_mutex);
         for (size_t i = 0; i < this->m_conns.get_size(); i++) {
             Connection *conn = (Connection *) this->m_conns[i];
             if (conn->is_active->load())
                 conn->terminate();
-            if (conn->is_ready->load())
-                conn->clean();
+
+            conn->m_thread->join();
+            conn->clean();
         }
     });
 }
@@ -48,7 +53,6 @@ void ConnectionPool::init_gc() {
 void ConnectionPool::push(struct tcp_stream stream) {
     auto *conn = new Connection { stream, this };
     {
-        std::lock_guard<std::mutex> lock(this->m_mutex);
         std::thread *conn_thread = new std::thread(*conn);
         conn->m_thread = conn_thread;
         this->m_conns.push(conn);

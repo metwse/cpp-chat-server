@@ -1,4 +1,6 @@
-#include <unistd.h>
+extern "C" {
+#include <chatd/net/tcp/stream.h>
+}
 
 #include <atomic>
 #include <thread>
@@ -16,16 +18,16 @@ Connection::Connection(struct tcp_stream stream, ConnectionPool *pool) :
 }
 
 void Connection::operator()() {
-    int sockfd = this->m_stream.sockfd;
-    char buf[1024];
-
     while (!is_ready->load())
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-    while (is_active->load()) {
-        if (read(sockfd, buf, sizeof(buf)) <= 0) {
-            *this->is_active = false;
-            tcp_stream_destroy(&this->m_stream);
+    char *buff = NULL;
+    size_t len;
+
+    while (this->is_active->load()) {
+        if (tcp_stream_readuntil(&this->m_stream, '\n', &buff, &len) != TCP_STREAM_OK) {
+            *this->is_ready = false;
+            break;
         }
     }
 }
@@ -38,7 +40,6 @@ void Connection::ready() {
 void Connection::terminate() {
     *this->is_active = false;
     tcp_stream_destroy(&this->m_stream);
-    this->m_thread->join();
 }
 
 void Connection::clean() {

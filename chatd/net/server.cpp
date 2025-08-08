@@ -3,6 +3,7 @@ extern "C" {
 #include <chatd/net/tcp/stream.h>
 }
 
+#include <cassert>
 #include <cstdint>
 
 #include <chatd/collections/vec.hpp>
@@ -29,6 +30,7 @@ void Server::serve_forever() {
     size_t conn_count = 0;
 #endif
     while (!tcp_listener_accept(&this->m_listener, &stream)) {
+        std::lock_guard<std::mutex> lock(pool.m_mutex);
         pool.push(stream);
 
 #ifdef _DEBUG

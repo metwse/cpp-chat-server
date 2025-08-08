@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 
 #include <stdint.h>
+#include <stdlib.h>
 
 
 enum tcp_listener_result tcp_listener_init(struct tcp_listener *listener,
@@ -71,6 +72,12 @@ enum tcp_listener_result tcp_listener_accept(const struct tcp_listener *listener
 		return TCP_LISTENER_ACCEPT_FAILED;
 
 	stream->sockfd = sockfd;
+
+	stream->buff = malloc(sizeof(char) * TCP_STREAM_BUFF_CAP);
+	if (stream->buff == NULL)
+		return TCP_LISTENER_NOMEM;
+
+	stream->buff_len = 0;
 
 	return TCP_LISTENER_OK;
 }
