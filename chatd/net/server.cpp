@@ -3,18 +3,15 @@ extern "C" {
 #include <chatd/net/tcp/stream.h>
 }
 
-#include <chatd/collections/vec.hpp>
-
 #include <cstdint>
-#include <thread>
 
+#include <chatd/collections/vec.hpp>
 #include <chatd/net/connection.hpp>
 #include <chatd/net/server.hpp>
 
 
 Server::~Server() {
     tcp_listener_destroy(&this->m_listener);
-    delete this->m_conn_thread_pool_mutex;
 }
 
 void Server::bind(const char *host, uint16_t port) {
@@ -26,20 +23,14 @@ void Server::bind(const char *host, uint16_t port) {
 
 void Server::serve_forever() {
     struct tcp_stream stream;
+    ConnectionPool pool;
 
+    int a = 0;
     while (!tcp_listener_accept(&this->m_listener, &stream)) {
-        auto conn = Connection(stream);
-        std::lock_guard<std::mutex> thread_lock(*conn.m_thread_ready);
-
-        std::thread **conn_thread = new std::thread *;
-        *conn_thread = new std::thread(conn, this, conn_thread);
-
-        this->m_conn_thread_pool.push(*conn_thread);
+        pool.push(stream);
+        if (++a > 2)
+            break;
     }
 
-    for (size_t i = 0; i < this->m_conn_thread_pool.get_size(); i++) {
-        std::thread *thread = (std::thread *) this->m_conn_thread_pool[i];
-        thread->join();
-        delete thread;
-    }
+    pool.terminate();
 }

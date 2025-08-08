@@ -1,26 +1,48 @@
-#include <cstdlib>
-extern "C" {
-#include <chatd/net/tcp/stream.h>
-}
+#include <atomic>
+#include <thread>
+#include <chrono>
 
-#include <mutex>
-
-#include <chatd/net/server.hpp>
 #include <chatd/net/connection.hpp>
+#include <unistd.h>
 
 
-Connection::~Connection() {
-    tcp_stream_destroy(&m_stream);
+Connection::Connection(struct tcp_stream stream, ConnectionPool *pool) :
+    m_stream { stream },
+    m_pool { pool }
+{
+    this->is_ready = new std::atomic_bool { false };
+    this->is_active = new std::atomic_bool { false };
 }
 
-void Connection::start_thread() {
-}
+void Connection::operator()() {
+    int sockfd = this->m_stream.sockfd;
+    char buf[1024];
 
-void Connection::operator()(Server *server, std::thread **conn_thread_ptr) {
-    {
-        std::lock_guard<std::mutex> lock(*this->m_thread_ready);
+    while (!is_ready->load())
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+    while (is_active->load()) {
+        if (read(sockfd, buf, sizeof(buf)) <= 0) {
+            *this->is_active = false;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+}
 
-    delete conn_thread_ptr;
-    delete this->m_thread_ready;
+void Connection::ready() {
+    *this->is_ready = true;
+    *this->is_active = true;
+}
+
+void Connection::terminate() {
+    *this->is_active = false;
+    tcp_stream_destroy(&this->m_stream);
+    this->m_thread->join();
+}
+
+void Connection::clean() {
+    delete this->is_ready;
+    delete this->is_active;
+    delete this->m_thread;
+    delete this;
 }

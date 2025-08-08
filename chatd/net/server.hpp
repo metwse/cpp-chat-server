@@ -8,11 +8,9 @@ extern "C" {
 #include <chatd/collections/vec.hpp>
 
 #include <cstdint>
-#include <mutex>
 
 
 class Connection;
-class ConnectionTerminateCallback;
 
 /**
  * class Server - chatd server
@@ -20,9 +18,7 @@ class ConnectionTerminateCallback;
 class Server {
 public:
     Server() :
-        m_listener { .sockfd = -1 },
-        m_conn_thread_pool {},
-        m_conn_thread_pool_mutex { new std::mutex }
+        m_listener { .sockfd = -1 }
     {}
 
     /**
@@ -51,13 +47,6 @@ private:
      * @see chatd/net/tcp/listener.h
      */
     tcp_listener m_listener;
-
-    /**
-     * @conn_pool: Pool of active client connections.
-     * @conn_pool_mutex: Mutex to protect conn_pool access.
-     */
-    Vec m_conn_thread_pool;
-    std::mutex *m_conn_thread_pool_mutex;
 };
 
 #endif

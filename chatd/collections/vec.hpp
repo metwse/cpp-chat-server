@@ -43,6 +43,10 @@ public:
         return this->m_vec.arr;
     }
 
+    struct vec *as_ref() {
+        return &this->m_vec;
+    };
+
     /**
      * Vec::operator+() - Concatenates two vectors
      * @other: Vector to append
