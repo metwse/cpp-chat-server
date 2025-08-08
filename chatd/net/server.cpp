@@ -34,9 +34,8 @@ void Server::serve_forever() {
         pool.push(stream);
 
 #ifdef _DEBUG
-        if (this->conn_limit && (++conn_count) == this->conn_limit) {
+        if (this->conn_limit && (++conn_count) == this->conn_limit)
             break;
-        }
 #endif
     }
 

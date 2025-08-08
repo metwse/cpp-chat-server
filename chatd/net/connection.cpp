@@ -25,7 +25,8 @@ void Connection::operator()() {
     size_t len;
 
     while (this->is_active->load()) {
-        if (tcp_stream_readuntil(&this->m_stream, '\n', &buff, &len) != TCP_STREAM_OK) {
+        if (tcp_stream_readuntil(&this->m_stream, '\n', &buff, &len) !=
+            TCP_STREAM_OK) {
             *this->is_ready = false;
             break;
         }

@@ -123,6 +123,7 @@ public:
 
 private:
     friend Server;
+    friend void test();
 
     /**
      * init_gc() - Initialize the garbage collection thread
