@@ -1,8 +1,6 @@
 #ifndef PROTOCOL_HPP
 #define PROTOCOL_HPP
 
-#include <cstddef>
-
 #include <chatd/collections/vec.hpp>
 #include <chatd/net/connection.hpp>
 
@@ -31,15 +29,14 @@ namespace msg {
 class Message : public Payload {
 public:
     /**
-     * to_string() - Serialize message to string representation
-     * @buffer: Pointer to char pointer that will hold the serialized message
-     * @size: Pointer to size_t that will hold the buffer size
+     * send() - Serialize message to string representation and send it to a
+     *          client
+     * @client: Individual client that payload sent to.
      *
      * Converts the message object into a string format suitable for
-     * transmission over the network. Allocates memory for the buffer and
-     * updates the size parameter.
+     * transmission over the network and sends it.
      */
-    virtual void to_string(char **buffer, size_t *size) = 0;
+    virtual void send(Connection &) = 0;
 
     /**
      * @from: Username of the message sender
@@ -63,9 +60,9 @@ public:
  */
 class DirectMessage : public Message {
 public:
-    DirectMessage();
+    DirectMessage(char *from, char *to, char *data);
 
-    void to_string(char **buffer, size_t *size) override;
+    void send(Connection &) override;
 
     /**
      * @to: Username of the message recipient
@@ -81,9 +78,9 @@ public:
  */
 class GroupMessage : public Message {
 public:
-    GroupMessage();
+    GroupMessage(char *from, char *to, char *data);
 
-    void to_string(char **buffer, size_t *size) override;
+    void send(Connection &) override;
 
     /**
      * @to: Name of the target channel
@@ -92,6 +89,17 @@ public:
      * message should be delivered.
      */
     char *to;
+};
+
+/**
+ * class GlobalMessage - Global message that sent to all channels client
+ *                       subscribed to.
+ */
+class GlobalMessage : public Message {
+public:
+    GlobalMessage(char *from, char *data);
+
+    void send(Connection &) override;
 };
 
 }
@@ -115,7 +123,7 @@ public:
      *
      * Pure virtual function that executes the specific command logic.
      */
-    virtual void operator()(Connection *, ConnectionPool *) = 0;
+    virtual void operator()(Connection &, ConnectionPool &) = 0;
 
     /**
      * @args: Command arguments
@@ -134,7 +142,7 @@ public:
  */
 class Subscribe : public Command {
 public:
-    void operator()(Connection *, ConnectionPool *) override;
+    void operator()(Connection &, ConnectionPool &) override;
 };
 
 /**
@@ -145,7 +153,7 @@ public:
  */
 class Unsubscribe : public Command {
 public:
-    void operator()(Connection *, ConnectionPool *) override;
+    void operator()(Connection &, ConnectionPool &) override;
 };
 
 /**
@@ -157,7 +165,7 @@ public:
  */
 class ListUsers : public Command {
 public:
-    void operator()(Connection *, ConnectionPool *) override;
+    void operator()(Connection &, ConnectionPool &) override;
 };
 
 /**
@@ -168,7 +176,7 @@ public:
  */
 class Delete : public Command {
 public:
-    void operator()(Connection *, ConnectionPool *) override;
+    void operator()(Connection &, ConnectionPool &) override;
 };
 
 /**
@@ -179,7 +187,7 @@ public:
  */
 class Logout : public Command {
 public:
-    void operator()(Connection *, ConnectionPool *) override;
+    void operator()(Connection &, ConnectionPool &) override;
 };
 
 }

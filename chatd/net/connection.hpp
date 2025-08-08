@@ -23,6 +23,18 @@ class ConnectionPool;
 class Connection {
 public:
     /**
+     * operator()() - Starts the client connection handler loop
+     *
+     * Main processing loop for handling client messages and maintaining the
+     * connection.
+     */
+    void operator()();
+
+private:
+    friend ConnectionPool;
+    friend Server;
+
+    /**
      * Connection() - Constructor for Connection
      * @stream: TCP stream for the client connection
      * @pool: Pointer to the connection pool managing this connection
@@ -31,14 +43,6 @@ public:
      * it with the given connection pool.
      */
     Connection(struct tcp_stream stream, ConnectionPool *pool);
-
-    /**
-     * operator()() - Starts the client connection handler loop
-     *
-     * Main processing loop for handling client messages and maintaining the
-     * connection.
-     */
-    void operator()();
 
     /**
      * ready() - Mark connection as ready for processing
@@ -66,9 +70,6 @@ public:
     std::atomic_bool *is_active;
     std::atomic_bool *is_ready;
 
-private:
-    friend ConnectionPool;
-
     /**
      * @m_stream: TCP stream handle for client communication
      *
@@ -95,6 +96,11 @@ private:
  */
 class ConnectionPool {
 public:
+
+private:
+    friend Server;
+    friend void test();
+
     /**
      * ConnectionPool() - Constructor for ConnectionPool
      *
@@ -120,10 +126,6 @@ public:
      * to the pool for management. The connection will be handled in a thread.
      */
     void push(struct tcp_stream stream);
-
-private:
-    friend Server;
-    friend void test();
 
     /**
      * init_gc() - Initialize the garbage collection thread
