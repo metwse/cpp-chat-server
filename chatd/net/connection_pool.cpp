@@ -39,7 +39,8 @@ void ConnectionPool::init_gc() {
             Connection *conn = (Connection *) this->m_conns[i];
             if (conn->is_active->load())
                 conn->terminate();
-            conn->clean();
+            if (conn->is_ready->load())
+                conn->clean();
         }
     });
 }

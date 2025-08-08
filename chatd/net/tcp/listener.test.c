@@ -15,7 +15,7 @@ void *stream_thread_f(void *arg)
 	struct tcp_stream conn;
 	assert(!tcp_stream_init(&conn, TEST_HOST, TEST_PORT));
 
-	char buff[14];
+	char buff[14] = {};
 	read(conn.sockfd, buff, 14);
 
 	printf("Received from server: %s\n", buff);
@@ -38,7 +38,7 @@ int main()
 
 	dprintf(remote_conn.sockfd, "Hello, world!");
 
-	char buff[15];
+	char buff[15] = {};
 	read(remote_conn.sockfd, buff, 15);
 
 	printf("Received from remote: %s\n", buff);

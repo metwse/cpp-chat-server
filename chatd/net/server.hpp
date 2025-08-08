@@ -38,8 +38,13 @@ public:
      */
     void serve_forever();
 
+#ifdef _DEBUG
+    size_t conn_limit { 0 };
+#endif
+
 private:
     friend Connection;
+    friend void test();
 
     /**
      * @m_listener: Underlying TCP listener

@@ -1,9 +1,10 @@
+#include <unistd.h>
+
 #include <atomic>
 #include <thread>
 #include <chrono>
 
 #include <chatd/net/connection.hpp>
-#include <unistd.h>
 
 
 Connection::Connection(struct tcp_stream stream, ConnectionPool *pool) :
@@ -24,8 +25,8 @@ void Connection::operator()() {
     while (is_active->load()) {
         if (read(sockfd, buf, sizeof(buf)) <= 0) {
             *this->is_active = false;
+            tcp_stream_destroy(&this->m_stream);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 

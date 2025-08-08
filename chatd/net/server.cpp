@@ -25,11 +25,17 @@ void Server::serve_forever() {
     struct tcp_stream stream;
     ConnectionPool pool;
 
-    int a = 0;
+#ifdef _DEBUG
+    size_t conn_count = 0;
+#endif
     while (!tcp_listener_accept(&this->m_listener, &stream)) {
         pool.push(stream);
-        if (++a > 2)
+
+#ifdef _DEBUG
+        if (this->conn_limit && (++conn_count) == this->conn_limit) {
             break;
+        }
+#endif
     }
 
     pool.terminate();
