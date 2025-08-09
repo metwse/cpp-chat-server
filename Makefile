@@ -3,7 +3,7 @@ PROJECT_NAME = chatd
 CC = gcc
 CXX = g++
 DEBUGGER = gdb
-MEMLEAK_TESTER = valgrind
+MEMCHECK = valgrind
 
 C_FLAGS=-O2 -Wall -Werror -D_GNU_SOURCE -std=gnu17 -I.
 T_FLAGS=-O0 -g3 -Wall -std=gnu17 -D_DEBUG -D_GNU_SOURCE -I.
@@ -79,9 +79,9 @@ $(BUILD_DIR)/tests/%.test: $(SRC_DIR)/%.test.c \
 		-o $@ \
 		$^
 
-.PHONY: run debug clean memleak \
-	build build_debug \
-	compile_commands
+.PHONY += run debug clean memleak \
+	  build build_debug \
+	  compile_commands
 # ===========================================================================
 
 
@@ -108,11 +108,19 @@ define test_rules
 build_test_$1: $$(BUILD_DIR)/tests/$1.test
 	@echo $$@
 
+memcheck_test_$1: $$(BUILD_DIR)/tests/$1.test
+	$$(MEMCHECK) $$^
+
 test_$1: $$(BUILD_DIR)/tests/$1.test
 	$$(DEBUGGER) $$^
 
-.PHONY += test_$1 build_test_$1
+.PHONY += test_$1 build_test_$1 memcheck_test_$1
 endef
+
+CXX_TESTS = $(patsubst $(SRC_DIR)/%.test.cpp,\
+	    $(BUILD_DIR)/tests/%.xx.test,$(TEST_SRC_CXX))
+C_TESTS = $(patsubst $(SRC_DIR)/%.test.c,\
+	  $(BUILD_DIR)/tests/%.test,$(TEST_SRC_C))
 
 $(foreach f, \
 	$(patsubst $(SRC_DIR)/%.test.c,%,$(TEST_SRC_C)), \
@@ -121,10 +129,26 @@ $(foreach f, \
 $(foreach f, \
 	$(patsubst $(SRC_DIR)/%.test.cpp,%.xx,$(TEST_SRC_CXX)), \
 	$(eval $(call test_rules,$(f))))
+
+test_all: $(C_TESTS) $(CXX_TESTS)
+	for test in $^; do \
+		$$test; \
+	done
+
+build_test_all: $(C_TESTS) $(CXX_TESTS)
+	@echo "" $(foreach test,$^,"$(test)\n")
+
+memcheck_test_all: $(C_TESTS) $(CXX_TESTS)
+	for test in $^; do \
+		$(MEMCHECK) $$test; \
+	done
+
+.PHONY += test_all build_test_all memcheck_test_all
+
 # ===========================================================================
 
-memleak: $(BUILD_DIR)/$(PROJECT_NAME).debug
-	$(MEMLEAK_TESTER) $(BUILD_DIR)/$(PROJECT_NAME).debug
+memcheck: $(BUILD_DIR)/$(PROJECT_NAME).debug
+	$(MEMCHECK) $(BUILD_DIR)/$(PROJECT_NAME).debug
 
 clean:
 	rm -rf $(BUILD_DIR)
