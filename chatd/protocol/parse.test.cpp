@@ -5,20 +5,15 @@
 #include <chatd/protocol/protocol.hpp>
 
 
-Payload *parse_nullterminated(char *cstring) {
-    return Payload::parse(cstring, strlen(cstring));
-}
-
-char *alloc_cstring(const char *str_literal) {
+Payload *parse_nullterminated(const char *str_literal) {
     char *str = (char *) malloc(sizeof(char *) * (strlen(str_literal) + 1));
     memcpy(str, str_literal, strlen(str_literal) + 1);
 
-    return str;
+    return Payload::parse(str, strlen(str_literal));
 }
 
 cmd::Command *parse_command(const char *str_literal) {
-    Payload *payload = parse_nullterminated(alloc_cstring(str_literal));
-
+    Payload *payload = parse_nullterminated(str_literal);
     if (!payload)
         return NULL;
 
@@ -27,9 +22,67 @@ cmd::Command *parse_command(const char *str_literal) {
     return dynamic_cast<cmd::Command *>(payload);
 }
 
+msg::Message *parse_message(const char *str_literal) {
+    Payload *payload = parse_nullterminated(str_literal);
+    if (!payload)
+        return NULL;
 
+    assert(payload->kind() == Payload::Kind::Message);
+
+    return dynamic_cast<msg::Message *>(payload);
+}
+
+
+void test_message();
+void test_command();
 
 int main() {
+    test_message();
+    test_command();
+}
+
+void test_message() {
+    const char *valid_msgs[] = {
+        "global message",
+        "#channel message",
+        "#channel    message   ",
+        "@direct direct",
+        "@direct    direct   ",
+        "@a e",
+        "#a e",
+        "a",
+        " ",
+        "@a  ",
+        "#e  ",
+    };
+
+    const char *invalid_msgs[] = {
+        "",
+        "#",
+        "@",
+        "#nocontent",
+        "@nocontent",
+        "# nochannel",
+        "@ nouser",
+        "@ a",
+        "# e",
+    };
+
+    for (const char *payload : valid_msgs) {
+        auto msg = parse_message(payload);
+        assert(msg);
+
+        delete msg;
+    }
+
+    for (const char *payload : invalid_msgs) {
+        auto msg = parse_message(payload);
+        assert(!msg);
+    }
+}
+
+
+void test_command() {
     const char *valid_cmds[] = {
         "/subscribe arg1 arg2",
         "/subscribe    arg1   arg2 ",

@@ -13,8 +13,10 @@ static inline bool is_valid_char(char c) {
 
 Payload *Payload::parse(char *buff, size_t len) {
     for (size_t i = 0; i < len; i++)
-        if (!is_valid_char(buff[i]))
+        if (!is_valid_char(buff[i])) {
+            free(buff);
             return NULL;
+        }
 
     if (buff[0] == '/') {
         cmd::Command *cmd = NULL;
@@ -68,42 +70,56 @@ Payload *Payload::parse(char *buff, size_t len) {
             delete cmd;
             return NULL;
         }
-    } else if (buff[0] == '@'){
-        size_t e;
-        for (e = 1; e < len; e++)
-            if (buff[e] == ' ')
-                break;
-
-        if (e >= len - 2)
+    } else if (buff[0] == '@' || buff[0] == '#'){
+        if (len < 3) {
+            free(buff);
             return NULL;
+        }
 
-        auto msg = new msg::DirectMessage();
-        msg->buff = buff;
-        msg->len = len;
+        for (size_t i = 1; i < len; i++) {
+            if (buff[i] == ' ') {
+                if (i == 1) {
+                    free(buff);
+                    return NULL;
+                }
 
-        msg->msg_begin = len + 1;
-
-        return msg;
-    } else if (buff[0] == '#'){
-        size_t e;
-        for (e = 1; e < len; e++)
-            if (buff[e] == ' ')
+                buff[i] = '\0';
                 break;
+            }
+            if (i >= len - 2) {
+                free(buff);
+                return NULL;
+            }
+        }
 
-        if (e >= len - 2)
-            return NULL;
+        if (buff[0] == '@') {
+            auto msg = new msg::DirectMessage();
+            msg->to = buff;
+            msg->content = &buff[len + 1];
 
-        auto msg = new msg::GroupMessage();
-        msg->buff = buff;
-        msg->len = len;
+            msg->buff = buff;
+            msg->len = len;
 
-        msg->msg_begin = len + 1;
+            return msg;
+        } else {
+            auto msg = new msg::GroupMessage();
+            msg->to = buff;
+            msg->content = &buff[len + 1];
 
-        return msg;
+            msg->buff = buff;
+            msg->len = len;
+
+            return msg;
+        }
     } else {
         auto msg = new msg::GlobalMessage();
         msg->buff = buff;
         msg->len = len;
+
+        if (msg->len == 0) {
+            delete msg;
+            return NULL;
+        }
 
         return msg;
     }

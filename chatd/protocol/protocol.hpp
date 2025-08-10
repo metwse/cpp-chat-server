@@ -91,7 +91,8 @@ public:
 
     void send(Connection &) override;
 
-    size_t msg_begin;
+    char *content;
+    char *to;
 };
 
 /**
@@ -104,7 +105,8 @@ public:
 
     void send(Connection &) override;
 
-    size_t msg_begin;
+    char *content;
+    char *to;
 };
 
 /**
