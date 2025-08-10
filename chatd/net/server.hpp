@@ -44,7 +44,10 @@ public:
 
 private:
     friend Connection;
+
+#ifdef _DEBUG
     friend void test();
+#endif
 
     /**
      * @m_listener: Underlying TCP listener

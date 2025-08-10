@@ -83,6 +83,7 @@ enum tcp_stream_result tcp_stream_readuntil(struct tcp_stream *stream,
 		}
 	}
 
+	free(outbuff);
 	return TCP_STREAM_READE;
 }
 
@@ -121,17 +122,17 @@ enum tcp_stream_result tcp_stream_init(struct tcp_stream *stream,
 
 enum tcp_stream_result tcp_stream_destroy(struct tcp_stream *stream)
 {
+	if (stream->buff) {
+		free(stream->buff);
+		stream->buff = NULL;
+	}
+
 	if (stream->sockfd == -1)
 		return TCP_STREAM_UNEXPECTED;
 
 	shutdown(stream->sockfd, SHUT_RD);
 	close(stream->sockfd);
 	stream->sockfd = -1;
-
-	if (stream->buff) {
-		free(stream->buff);
-		stream->buff = NULL;
-	}
 
 	return TCP_STREAM_OK;
 }

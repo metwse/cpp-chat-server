@@ -48,11 +48,12 @@ public:
     static Payload *parse(char *buff, size_t len);
 
     virtual inline Payload::Kind kind() = 0;
+    std::shared_ptr<User> user;
 
+protected:
     char *buff{NULL};
     size_t len;
 
-    std::shared_ptr<User> user;
 };
 
 namespace msg {
@@ -119,6 +120,8 @@ public:
     virtual ~GlobalMessage() = default;
 
     void send(Connection &) override;
+
+    char *content;
 };
 
 }

@@ -9,6 +9,7 @@ extern "C" {
 #include <mutex>
 #include <thread>
 
+#include <chatd/collections/ringbuffer.hpp>
 #include <chatd/net/server.hpp>
 
 
@@ -22,17 +23,10 @@ class ConnectionPool;
  */
 class Connection {
 public:
-    /**
-     * operator()() - Starts the client connection handler loop
-     *
-     * Main processing loop for handling client messages and maintaining the
-     * connection.
-     */
-    void operator()();
+    Connection(Connection &) = delete;
 
 private:
     friend ConnectionPool;
-    friend Server;
 
     /**
      * Connection() - Constructor for Connection
@@ -44,14 +38,9 @@ private:
      */
     Connection(struct tcp_stream stream, ConnectionPool *pool);
 
-    /**
-     * ready() - Mark connection as ready for processing
-     *
-     * Signals that the connection has been fully initialized and is ready to
-     * begin processing client requests. Sets up any final connection state
-     * before entering the main processing loop.
-     */
-    void ready();
+    ~Connection();
+
+    static void receiver_thread(Connection *self);
 
     /**
      * terminate() - Gracefully terminate the connection
@@ -62,30 +51,12 @@ private:
      */
     void terminate();
 
-    /**
-     * clean() - Clean up connection resources
-     */
-    void clean();
+    std::atomic_bool m_is_killed { false };
+    std::atomic_bool m_is_ready { false };
 
-    std::atomic_bool *is_active;
-    std::atomic_bool *is_ready;
-
-    /**
-     * @m_stream: TCP stream handle for client communication
-     *
-     * @see chatd/net/tcp/stream.h
-     */
     struct tcp_stream m_stream;
 
-    std::thread *m_thread;
-
-    /**
-     * @m_pool: Pointer to the connection pool
-     *
-     * Reference to the ConnectionPool that manages this connection instance
-     * for resource management and cleanup.
-     */
-    ConnectionPool *m_pool;
+    std::thread *m_receiver_thread;
 };
 
 /**
@@ -96,10 +67,12 @@ private:
  */
 class ConnectionPool {
 public:
+    ConnectionPool(ConnectionPool &) = delete;
 
 private:
     friend Server;
     friend void test();
+
 
     /**
      * ConnectionPool() - Constructor for ConnectionPool
@@ -109,14 +82,7 @@ private:
      */
     ConnectionPool();
 
-    /**
-     * terminate() - Terminate all connections and shutdown the pool
-     *
-     * Initiates shutdown of the entire connection pool by terminating all
-     * active connections, stopping the garbage collector thread, and preparing
-     * for cleanup. Called during server shutdown or pool destruction.
-     */
-    void terminate();
+    ~ConnectionPool();
 
     /**
      * push() - Add a new connection to the pool
@@ -127,16 +93,7 @@ private:
      */
     void push(struct tcp_stream stream);
 
-    /**
-     * init_gc() - Initialize the garbage collection thread
-     *
-     * Sets up and starts the garbage collector thread responsible for cleaning
-     * up terminated connections and reclaiming resources. Called during
-     * `ConnectionPool` initialization.
-     */
-    void init_gc();
-
-    std::atomic_bool m_running { true };
+    bool m_running { true };
 
     /**
      * @m_conns: Container holding active connections

@@ -7,7 +7,6 @@ extern "C" {
 
 #include <ctime>
 #include <thread>
-#include <chrono>
 #include <cassert>
 #include <cstdlib>
 
@@ -19,6 +18,7 @@ extern "C" {
 void stream_thread_instantexit()
 {
     struct tcp_stream conn;
+
     assert(!tcp_stream_init(&conn, TEST_HOST, TEST_PORT));
 
     tcp_stream_destroy(&conn);

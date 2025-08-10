@@ -4,49 +4,46 @@ extern "C" {
 
 #include <atomic>
 #include <thread>
-#include <chrono>
 
 #include <chatd/net/connection.hpp>
 #include <chatd/protocol/protocol.hpp>
 
 
 Connection::Connection(struct tcp_stream stream, ConnectionPool *pool) :
-    m_stream { stream },
-    m_pool { pool }
+    m_stream { stream }
 {
-    this->is_ready = new std::atomic_bool { false };
-    this->is_active = new std::atomic_bool { false };
 }
 
-void Connection::operator()() {
-    while (!is_ready->load())
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+Connection::~Connection() {
+    terminate();
+
+    m_receiver_thread->join();
+    delete this->m_receiver_thread;
+}
+
+void Connection::receiver_thread(Connection *self) {
+    while (!self->m_is_ready.load())
+        ;
 
     char *buff = NULL;
     size_t len;
 
-    while (this->is_active->load()) {
-        if (tcp_stream_readuntil(&this->m_stream, '\n', &buff, &len) !=
+    while (!self->m_is_killed.load()) {
+        if (tcp_stream_readuntil(&self->m_stream, '\n', &buff, &len) !=
             TCP_STREAM_OK) {
-            *this->is_ready = false;
+            self->m_is_ready = false;
             break;
         }
+
+        auto payload = Payload::parse(buff, len);
+
+        if (payload)
+            delete payload;
     }
 }
 
-void Connection::ready() {
-    *this->is_active = true;
-    *this->is_ready = true;
-}
 
 void Connection::terminate() {
-    *this->is_active = false;
-    tcp_stream_destroy(&this->m_stream);
-}
-
-void Connection::clean() {
-    delete this->is_ready;
-    delete this->is_active;
-    delete this->m_thread;
-    delete this;
+    if (!this->m_is_killed.exchange(true))
+        tcp_stream_destroy(&this->m_stream);
 }

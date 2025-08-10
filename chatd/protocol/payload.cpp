@@ -113,6 +113,9 @@ Payload *Payload::parse(char *buff, size_t len) {
         }
     } else {
         auto msg = new msg::GlobalMessage();
+
+        msg->content = buff;
+
         msg->buff = buff;
         msg->len = len;
 

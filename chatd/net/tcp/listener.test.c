@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <string.h>
 #include <unistd.h>
 
 #define TEST_HOST "127.0.0.1"
@@ -18,7 +19,7 @@ void *stream_thread_f(void *arg)
 	char buff[14] = {};
 	read(conn.sockfd, buff, 14);
 
-	printf("Received from server: %s\n", buff);
+	assert(!strcmp(buff, "Hello, world!"));
 	dprintf(conn.sockfd, "Hello, server!");
 
 	tcp_stream_destroy(&conn);
@@ -44,7 +45,7 @@ int main()
 		char buff[15] = {};
 		read(remote_conn.sockfd, buff, 15);
 
-		printf("Received from remote: %s\n", buff);
+		assert(!strcmp(buff, "Hello, server!"));
 
 		pthread_join(stream_thread, NULL);
 		tcp_stream_destroy(&remote_conn);
