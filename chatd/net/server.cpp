@@ -28,6 +28,8 @@ void Server::serve_forever() {
 
 #ifdef _DEBUG
     size_t conn_count = 0;
+
+    this->connection_pool = &pool;
 #endif
 
     while (!tcp_listener_accept(&this->m_listener, &stream)) {

@@ -1,5 +1,3 @@
-#include <unistd.h>
-
 extern "C" {
 #include <chatd/net/tcp/stream.h>
 #include <chatd/net/tcp/listener.h>
@@ -12,19 +10,20 @@ extern "C" {
 
 #include <chatd/net/server.hpp>
 
-#define TEST_HOST "0.0.0.0"
-#define TEST_PORT 3001
 
-void stream_thread_instantexit()
+#define TEST_HOST "127.0.0.1"
+#define TEST_PORT 15535
+
+
+void connection_instantexit()
 {
     struct tcp_stream conn;
-
     assert(!tcp_stream_init(&conn, TEST_HOST, TEST_PORT));
 
     tcp_stream_destroy(&conn);
 }
 
-void stream_thread()
+void connection()
 {
     struct tcp_stream conn;
     assert(!tcp_stream_init(&conn, TEST_HOST, TEST_PORT));
@@ -39,8 +38,8 @@ void test() {
 
     for (int _fuzz = 0; _fuzz < 16; _fuzz++) {
         Server srv;
-
         srv.bind(TEST_HOST, TEST_PORT);
+
         auto srv_thread = std::thread([&srv] () {
             srv.serve_forever();
         });
@@ -51,10 +50,10 @@ void test() {
         std::thread *client_threads = new std::thread[client_count];
 
         for (int i = 0; i < client_count / 2; i++)
-            client_threads[i] = std::thread(stream_thread_instantexit);
+            client_threads[i] = std::thread(connection_instantexit);
 
         for (int i = client_count / 2; i < client_count; i++)
-            client_threads[i] = std::thread(stream_thread);
+            client_threads[i] = std::thread(connection);
 
         for (int i = 0; i < client_count; i++)
             client_threads[i].join();

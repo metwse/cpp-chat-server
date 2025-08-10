@@ -6,24 +6,31 @@ extern "C" {
 #include <thread>
 #include <chrono>
 #include <memory>
+#include <cstdlib>
 
 #include <chatd/net/connection.hpp>
 #include <chatd/protocol/protocol.hpp>
 
 
+struct outgoing_payload {
+    char *buff;
+    size_t len;
+};
+
 Connection::Connection(struct tcp_stream stream, ConnectionPool *pool) :
     m_stream { stream }
-{
-}
+{}
 
 Connection::~Connection() {
-    terminate();
+    delete m_rx_thread;
+    delete m_tx_thread;
 
-    m_rx_thread->join();
-    m_tx_thread->join();
+    for (size_t i = 0; i < m_tx_queue.get_size(); i++) {
+        auto payload = (struct outgoing_payload *) m_tx_queue.pop_back();
 
-    delete this->m_rx_thread;
-    delete this->m_tx_thread;
+        free(payload->buff);
+        delete payload;
+    }
 }
 
 void Connection::rx_thread(std::shared_ptr<Connection> self) {
@@ -44,6 +51,12 @@ void Connection::rx_thread(std::shared_ptr<Connection> self) {
 
         auto payload = Payload::parse(buff, len);
 
+        if (payload->kind() == Payload::Kind::Command) {
+            // auto _ = dynamic_cast<cmd::Command *>(payload);
+        } else if (payload->kind() == Payload::Kind::Message) {
+            // auto _ = dynamic_cast<msg::Message *>(payload);
+        }
+
         if (payload)
             delete payload;
     }
@@ -54,11 +67,50 @@ void Connection::tx_thread(std::shared_ptr<Connection> self) {
         if (self->m_is_killed)
             return;
 
-    // while (!self->m_is_killed.load())
+    std::unique_lock<std::mutex> lk(self->m_tx_queue_mutex);
+    bool end = false;
+
+    while (!self->m_is_killed.load()) {
+        self->m_tx_condvar.wait(lk);
+
+        while (self->m_tx_queue.get_size() && !end) {
+            auto payload = (struct outgoing_payload *)
+                self->m_tx_queue.pop_back();
+
+            if (tcp_stream_write(&self->m_stream, payload->buff, payload->len)) {
+                self->m_is_ready = false;
+                end = true;
+            }
+
+            free(payload->buff);
+            delete payload;
+        }
+
+        if (end)
+            break;
+    }
 }
 
+void Connection::send(char *buff, size_t len) {
+    std::lock_guard<std::mutex> guard(m_tx_queue_mutex);
+
+    auto payload = new struct outgoing_payload;
+    payload->buff = buff;
+    payload->len = len;
+
+    m_tx_queue.push_front(payload);
+    m_tx_condvar.notify_one();
+}
 
 void Connection::terminate() {
-    if (!this->m_is_killed.exchange(true, std::memory_order_seq_cst))
-        tcp_stream_destroy(&this->m_stream);
+    if (!m_is_killed.exchange(true, std::memory_order_seq_cst)) {
+        tcp_stream_destroy(&m_stream);
+        m_tx_condvar.notify_one();
+    }
+}
+
+void Connection::shutdown() {
+    terminate();
+    m_rx_thread->join();
+    m_tx_thread->join();
 }

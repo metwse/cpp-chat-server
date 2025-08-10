@@ -11,6 +11,7 @@ extern "C" {
 
 
 class Connection;
+class ConnectionPool;
 
 /**
  * class Server - chatd server
@@ -39,7 +40,9 @@ public:
     void serve_forever();
 
 #ifdef _DEBUG
-    size_t conn_limit { 0 };
+    size_t conn_limit{};
+
+    ConnectionPool *connection_pool{NULL};
 #endif
 
 private:

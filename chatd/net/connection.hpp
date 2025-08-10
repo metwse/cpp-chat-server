@@ -9,6 +9,7 @@ extern "C" {
 #include <atomic>
 #include <mutex>
 #include <thread>
+#include <condition_variable>
 
 #include <chatd/collections/ringbuffer.hpp>
 #include <chatd/net/server.hpp>
@@ -28,8 +29,14 @@ public:
 
     ~Connection();
 
+    void send(char *buff, size_t len);
+
 private:
     friend ConnectionPool;
+
+#ifdef _DEBUG
+    friend void test();
+#endif
 
     /**
      * Connection() - Constructor for Connection
@@ -53,6 +60,11 @@ private:
      */
     void terminate();
 
+    /**
+     * shutdown() - Terminate the connection and cleanup threads
+     */
+    void shutdown();
+
     std::atomic_bool m_is_killed { false };
     std::atomic_bool m_is_ready { false };
 
@@ -60,6 +72,10 @@ private:
 
     std::thread *m_rx_thread;
     std::thread *m_tx_thread;
+
+    Ringbuffer m_tx_queue;
+    std::mutex m_tx_queue_mutex;
+    std::condition_variable m_tx_condvar;
 };
 
 /**

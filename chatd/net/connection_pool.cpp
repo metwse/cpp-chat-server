@@ -18,11 +18,13 @@ ConnectionPool::ConnectionPool() {
             std::this_thread::sleep_for(std::chrono::milliseconds(64));
 
             lk.lock();
-            for (size_t i = 0; i < m_conns.get_size(); i++) {
+            for (int i = 0; i < m_conns.get_size(); i++) {
                 auto conn = (std::shared_ptr<Connection> *) m_conns[i];
 
                 if (!(*conn)->m_is_ready.load()) {
                     m_conns.remove(i--);
+
+                    (*conn)->shutdown();
                     delete conn;
                 }
             }
@@ -30,8 +32,12 @@ ConnectionPool::ConnectionPool() {
         }
 
         lk.lock();
-        for (size_t i = 0; i < m_conns.get_size(); i++)
-            delete (std::shared_ptr<Connection> *) m_conns[i];
+        for (size_t i = 0; i < m_conns.get_size(); i++) {
+            auto conn = (std::shared_ptr<Connection> *) m_conns[i];
+
+            (*conn)->shutdown();
+            delete conn;
+        }
     });
 }
 
@@ -41,7 +47,7 @@ ConnectionPool::~ConnectionPool() {
 }
 
 void ConnectionPool::push(struct tcp_stream stream) {
-    auto conn = new std::shared_ptr<Connection> (new Connection { stream, this });
+    auto conn = new std::shared_ptr<Connection>(new Connection { stream, this });
 
     (*conn)->m_rx_thread = new std::thread(Connection::rx_thread, *conn);
     (*conn)->m_tx_thread = new std::thread(Connection::tx_thread, *conn);
