@@ -26,6 +26,7 @@ enum tcp_stream_result {
 	TCP_STREAM_UNEXPECTED,
 	TCP_STREAM_NOMEM,
 	TCP_STREAM_READE,
+	TCP_STREAM_WRITEE,
 	TCP_STREAM_TERMINATED_LINE,
 };
 
@@ -49,5 +50,13 @@ enum tcp_stream_result tcp_stream_destroy(struct tcp_stream *);
  */
 enum tcp_stream_result tcp_stream_readuntil(struct tcp_stream *,
 					    char c, char **out, size_t *len);
+
+/**
+ * tcp_stream_write() - Writes given buffer to socket.
+ *
+ * Ensures the outbuffer null-terminated.
+ */
+enum tcp_stream_result tcp_stream_write(struct tcp_stream *,
+					char *buff, size_t len);
 
 #endif

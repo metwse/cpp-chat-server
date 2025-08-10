@@ -4,6 +4,8 @@ extern "C" {
 
 #include <atomic>
 #include <thread>
+#include <chrono>
+#include <memory>
 
 #include <chatd/net/connection.hpp>
 #include <chatd/protocol/protocol.hpp>
@@ -17,20 +19,25 @@ Connection::Connection(struct tcp_stream stream, ConnectionPool *pool) :
 Connection::~Connection() {
     terminate();
 
-    m_receiver_thread->join();
-    delete this->m_receiver_thread;
+    m_rx_thread->join();
+    m_tx_thread->join();
+
+    delete this->m_rx_thread;
+    delete this->m_tx_thread;
 }
 
-void Connection::receiver_thread(Connection *self) {
-    while (!self->m_is_ready.load())
-        ;
+void Connection::rx_thread(std::shared_ptr<Connection> self) {
+    while (!self->m_is_ready.load()) {
+        if (self->m_is_killed)
+            return;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
 
     char *buff = NULL;
     size_t len;
 
     while (!self->m_is_killed.load()) {
-        if (tcp_stream_readuntil(&self->m_stream, '\n', &buff, &len) !=
-            TCP_STREAM_OK) {
+        if (tcp_stream_readuntil(&self->m_stream, '\n', &buff, &len)) {
             self->m_is_ready = false;
             break;
         }
@@ -42,8 +49,16 @@ void Connection::receiver_thread(Connection *self) {
     }
 }
 
+void Connection::tx_thread(std::shared_ptr<Connection> self) {
+    while (!self->m_is_ready.load())
+        if (self->m_is_killed)
+            return;
+
+    // while (!self->m_is_killed.load())
+}
+
 
 void Connection::terminate() {
-    if (!this->m_is_killed.exchange(true))
+    if (!this->m_is_killed.exchange(true, std::memory_order_seq_cst))
         tcp_stream_destroy(&this->m_stream);
 }

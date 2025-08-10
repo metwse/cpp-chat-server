@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <string.h>
-#include <unistd.h>
 
 #define TEST_HOST "127.0.0.1"
 #define TEST_PORT 21242
@@ -64,7 +63,7 @@ int main()
 		sent_data[i][len] = '\n';
 		sent_data_len[i] = len;
 
-		write(remote_conn.sockfd, sent_data[i], len + 1);
+		assert(!tcp_stream_write(&remote_conn, sent_data[i], len + 1));
 	}
 
 	pthread_join(stream_thread, NULL);

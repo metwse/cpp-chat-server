@@ -5,6 +5,7 @@ extern "C" {
 #include <chatd/net/tcp/stream.h>
 }
 
+#include <memory>
 #include <atomic>
 #include <mutex>
 #include <thread>
@@ -25,6 +26,8 @@ class Connection {
 public:
     Connection(Connection &) = delete;
 
+    ~Connection();
+
 private:
     friend ConnectionPool;
 
@@ -38,9 +41,8 @@ private:
      */
     Connection(struct tcp_stream stream, ConnectionPool *pool);
 
-    ~Connection();
-
-    static void receiver_thread(Connection *self);
+    static void rx_thread(std::shared_ptr<Connection> self);
+    static void tx_thread(std::shared_ptr<Connection> self);
 
     /**
      * terminate() - Gracefully terminate the connection
@@ -56,7 +58,8 @@ private:
 
     struct tcp_stream m_stream;
 
-    std::thread *m_receiver_thread;
+    std::thread *m_rx_thread;
+    std::thread *m_tx_thread;
 };
 
 /**
@@ -72,7 +75,6 @@ public:
 private:
     friend Server;
     friend void test();
-
 
     /**
      * ConnectionPool() - Constructor for ConnectionPool

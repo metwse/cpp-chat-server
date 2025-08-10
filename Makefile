@@ -3,7 +3,7 @@ PROJECT_NAME = chatd
 CC = gcc
 CXX = g++
 DEBUGGER = gdb
-MEMCHECK = valgrind
+MEMCHECK = valgrind --fair-sched=yes --leak-check=full
 
 C_FLAGS=-O2 -Wall -Werror -D_GNU_SOURCE -std=gnu17 -I.
 T_FLAGS=-O0 -g3 -Wall -std=gnu17 -D_DEBUG -D_GNU_SOURCE -I.

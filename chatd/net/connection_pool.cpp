@@ -2,6 +2,8 @@ extern "C" {
 #include <chatd/net/tcp/stream.h>
 }
 
+#include <mutex>
+#include <memory>
 #include <thread>
 #include <chrono>
 
@@ -10,23 +12,26 @@ extern "C" {
 
 ConnectionPool::ConnectionPool() {
     m_gc_thread = std::thread([this] () {
+        std::unique_lock<std::mutex> lk(m_mutex, std::defer_lock);
+
         while (m_running) {
             std::this_thread::sleep_for(std::chrono::milliseconds(64));
-            std::lock_guard<std::mutex> lock(m_mutex);
 
+            lk.lock();
             for (size_t i = 0; i < m_conns.get_size(); i++) {
-                Connection *conn = (Connection *) m_conns[i];
+                auto conn = (std::shared_ptr<Connection> *) m_conns[i];
 
-                if (!conn->m_is_ready.load()) {
+                if (!(*conn)->m_is_ready.load()) {
                     m_conns.remove(i--);
                     delete conn;
                 }
             }
+            lk.unlock();
         }
 
-        std::lock_guard<std::mutex> lock(m_mutex);
+        lk.lock();
         for (size_t i = 0; i < m_conns.get_size(); i++)
-            delete (Connection *) m_conns[i];
+            delete (std::shared_ptr<Connection> *) m_conns[i];
     });
 }
 
@@ -36,12 +41,12 @@ ConnectionPool::~ConnectionPool() {
 }
 
 void ConnectionPool::push(struct tcp_stream stream) {
-    auto *conn = new Connection { stream, this };
+    auto conn = new std::shared_ptr<Connection> (new Connection { stream, this });
 
-    std::thread *conn_thread = new std::thread(Connection::receiver_thread, conn);
-    conn->m_receiver_thread = conn_thread;
-    conn->m_is_ready = true;
+    (*conn)->m_rx_thread = new std::thread(Connection::rx_thread, *conn);
+    (*conn)->m_tx_thread = new std::thread(Connection::tx_thread, *conn);
 
+    (*conn)->m_is_ready = true;
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_conns.push(conn);
