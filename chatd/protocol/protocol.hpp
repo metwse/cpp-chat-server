@@ -4,6 +4,26 @@
 #include <chatd/collections/vec.hpp>
 #include <chatd/net/connection.hpp>
 
+#include <cstddef>
+#include <memory>
+
+
+/**
+ * class User - User data
+ */
+class User {
+public:
+    User(const char *username_, const char *password_)
+        : username { username_ }, password { password_ }
+    {}
+
+    ~User() = default;
+
+    const char *username;
+    const char *password;
+
+    Vec channels;
+};
 
 /**
  * class Payload - Base class for all protocol payloads
@@ -14,7 +34,25 @@
  */
 class Payload {
 public:
-    virtual ~Payload() = 0;
+    virtual ~Payload();
+
+    enum class Kind {
+        Message, Command
+    };
+
+    /**
+     * parse_payload() - Parses cstring payloads
+     *
+     * Buffer should be null-terminated even thoough buffer length is known.
+     */
+    static Payload *parse(char *buff, size_t len);
+
+    virtual inline Payload::Kind kind() = 0;
+
+    char *buff{NULL};
+    size_t len;
+
+    std::shared_ptr<User> user;
 };
 
 namespace msg {
@@ -28,6 +66,10 @@ namespace msg {
  */
 class Message : public Payload {
 public:
+    virtual ~Message() = default;
+
+    virtual inline Payload::Kind kind() { return Kind::Message; };
+
     /**
      * send() - Serialize message to string representation and send it to a
      *          client
@@ -37,22 +79,6 @@ public:
      * transmission over the network and sends it.
      */
     virtual void send(Connection &) = 0;
-
-    /**
-     * @from: Username of the message sender
-     *
-     * Null-terminated string containing the username of the client who sent
-     * this message.
-     */
-    char *from;
-
-    /**
-     * @data: Message content
-     *
-     * Null-terminated string containing the actual message text sent by the
-     * user.
-     */
-    char *data;
 };
 
 /**
@@ -60,17 +86,12 @@ public:
  */
 class DirectMessage : public Message {
 public:
-    DirectMessage(char *from, char *to, char *data);
+    DirectMessage() = default;
+    virtual ~DirectMessage() = default;
 
     void send(Connection &) override;
 
-    /**
-     * @to: Username of the message recipient
-     *
-     * Null-terminated string containing the username of the intended recipient
-     * for this private message.
-     */
-    char *to;
+    size_t msg_begin;
 };
 
 /**
@@ -78,17 +99,12 @@ public:
  */
 class GroupMessage : public Message {
 public:
-    GroupMessage(char *from, char *to, char *data);
+    GroupMessage() = default;
+    virtual ~GroupMessage() = default;
 
     void send(Connection &) override;
 
-    /**
-     * @to: Name of the target channel
-     *
-     * Null-terminated string containing the name of the channel where this
-     * message should be delivered.
-     */
-    char *to;
+    size_t msg_begin;
 };
 
 /**
@@ -97,7 +113,8 @@ public:
  */
 class GlobalMessage : public Message {
 public:
-    GlobalMessage(char *from, char *data);
+    GlobalMessage() = default;
+    virtual ~GlobalMessage() = default;
 
     void send(Connection &) override;
 };
@@ -116,6 +133,10 @@ namespace cmd {
  */
 class Command : public Payload {
 public:
+    virtual ~Command() = default;
+
+    virtual inline Payload::Kind kind() { return Kind::Command; };
+
     /**
      * operator()() - Execute the command
      * @conn: Connection that issued the command
@@ -142,6 +163,9 @@ public:
  */
 class Subscribe : public Command {
 public:
+    Subscribe() = default;
+    virtual ~Subscribe() = default;
+
     void operator()(Connection &, ConnectionPool &) override;
 };
 
@@ -153,6 +177,9 @@ public:
  */
 class Unsubscribe : public Command {
 public:
+    Unsubscribe() = default;
+    virtual ~Unsubscribe() = default;
+
     void operator()(Connection &, ConnectionPool &) override;
 };
 
@@ -165,6 +192,9 @@ public:
  */
 class ListUsers : public Command {
 public:
+    ListUsers() = default;
+    virtual ~ListUsers() = default;
+
     void operator()(Connection &, ConnectionPool &) override;
 };
 
@@ -176,6 +206,9 @@ public:
  */
 class Delete : public Command {
 public:
+    Delete() = default;
+    virtual ~Delete() = default;
+
     void operator()(Connection &, ConnectionPool &) override;
 };
 
@@ -187,6 +220,9 @@ public:
  */
 class Logout : public Command {
 public:
+    Logout() = default;
+    virtual ~Logout() = default;
+
     void operator()(Connection &, ConnectionPool &) override;
 };
 

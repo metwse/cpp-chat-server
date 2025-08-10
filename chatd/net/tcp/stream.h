@@ -44,6 +44,8 @@ enum tcp_stream_result tcp_stream_destroy(struct tcp_stream *);
 
 /**
  * tcp_stream_readuntil() - Reads until given char from TCP stream.
+ *
+ * Ensures the outbuffer null-terminated.
  */
 enum tcp_stream_result tcp_stream_readuntil(struct tcp_stream *,
 					    char c, char **out, size_t *len);

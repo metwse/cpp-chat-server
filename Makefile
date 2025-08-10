@@ -132,6 +132,7 @@ $(foreach f, \
 
 test_all: $(C_TESTS) $(CXX_TESTS)
 	for test in $^; do \
+		echo "Running $$test"; \
 		$$test; \
 	done
 

@@ -7,6 +7,7 @@ extern "C" {
 #include <chrono>
 
 #include <chatd/net/connection.hpp>
+#include <chatd/protocol/protocol.hpp>
 
 
 Connection::Connection(struct tcp_stream stream, ConnectionPool *pool) :
@@ -34,8 +35,8 @@ void Connection::operator()() {
 }
 
 void Connection::ready() {
-    *this->is_ready = true;
     *this->is_active = true;
+    *this->is_ready = true;
 }
 
 void Connection::terminate() {

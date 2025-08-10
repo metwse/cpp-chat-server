@@ -16,12 +16,13 @@ enum tcp_stream_result tcp_stream_readuntil(struct tcp_stream *stream,
 {
 	for (size_t i = 0; i < stream->buff_len; i++) {
 		if (stream->buff[i] == c) {
-			*out = malloc(sizeof(char) * i);
+			*out = malloc(sizeof(char) * (i + 1));
 			if (*out == NULL)
 				return TCP_STREAM_NOMEM;
 			*len = i;
 
 			memcpy(*out, stream->buff, i * sizeof(char));
+			(*out)[i] = '\0';
 
 			if (stream->buff_len > 0) {
 				for (size_t j = i + 1; j < stream->buff_len; j++)
@@ -74,7 +75,8 @@ enum tcp_stream_result tcp_stream_readuntil(struct tcp_stream *stream,
 				free(outbuff);
 				*out = NULL;
 			} else {
-				*out = realloc(outbuff, *len);
+				*out = realloc(outbuff, *len + 1);
+				(*out)[*len] = '\0';
 			}
 
 			return TCP_STREAM_OK;
