@@ -2,7 +2,6 @@
 #define PROTOCOL_HPP
 
 #include <chatd/collections/vec.hpp>
-#include <chatd/net/connection.hpp>
 
 #include <cstddef>
 #include <memory>
@@ -10,6 +9,9 @@
 
 #define WELCOME_MESSAGE "Welcome to the chat relay!\n" \
                         "Please enter your username: "
+
+class Connection;
+class ConnectionPool;
 
 /**
  * class User - User data

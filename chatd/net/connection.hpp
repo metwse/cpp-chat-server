@@ -11,8 +11,9 @@ extern "C" {
 #include <thread>
 #include <condition_variable>
 
-#include <chatd/collections/ringbuffer.hpp>
+#include <chatd/protocol/protocol.hpp>
 #include <chatd/net/server.hpp>
+#include <chatd/collections/ringbuffer.hpp>
 
 
 class ConnectionPool;
@@ -29,9 +30,19 @@ public:
 
     ~Connection();
 
+    /**
+     * terminate() - Gracefully terminate the connection
+     *
+     * Initiates a graceful shutdown of the client connection, signals the
+     * connection handler loop to exit.
+     */
+    void terminate();
+
     void send(char *buff, size_t len);
 
     void send_strliteral(const char *cstring);
+
+    User *user { nullptr };
 
 private:
     friend ConnectionPool;
@@ -54,16 +65,9 @@ private:
     static void tx_thread(std::shared_ptr<Connection> self);
 
     /**
-     * terminate() - Gracefully terminate the connection
-     *
-     * Initiates a graceful shutdown of the client connection. Cleans up
-     * resources, flushes any pending data, and signals the connection handler
-     * loop to exit.
-     */
-    void terminate();
-
-    /**
      * shutdown() - Terminate the connection and cleanup threads
+     *
+     * Cleans up resources, flushes any pending data,
      */
     void shutdown();
 

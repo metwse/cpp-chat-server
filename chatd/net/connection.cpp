@@ -3,6 +3,7 @@ extern "C" {
 }
 
 #include <mutex>
+#include <cctype>
 #include <atomic>
 #include <thread>
 #include <chrono>
@@ -49,25 +50,86 @@ void Connection::rx_thread(std::shared_ptr<Connection> self) {
     char *buff = NULL;
     size_t len;
 
+    char *username = NULL, *password = NULL;
+    bool authenticated = false;
+
     while (!self->m_is_killed.load()) {
         if (tcp_stream_readuntil(&self->m_stream, '\n', &buff, &len)) {
             self->m_is_ready = false;
             break;
         }
 
-        auto payload = Payload::parse(buff, len);
+        if (authenticated) {
+            auto payload = Payload::parse(buff, len);
 
-        if (!payload)
-            continue;
+            if (!payload)
+                continue;
 
-        if (payload->kind() == Payload::Kind::Command) {
-            // auto _ = dynamic_cast<cmd::Command *>(payload);
-        } else if (payload->kind() == Payload::Kind::Message) {
-            // auto _ = dynamic_cast<msg::Message *>(payload);
+            if (payload->kind() == Payload::Kind::Command) {
+                // auto _ = dynamic_cast<cmd::Command *>(payload);
+            } else if (payload->kind() == Payload::Kind::Message) {
+                // auto _ = dynamic_cast<msg::Message *>(payload);
+            }
+
+            if (payload)
+                delete payload;
+        } else {
+            if (buff[len - 1] == '\r') {
+                buff[len - 1] = '\0';
+                len--;
+            }
+
+            if (username == NULL) {
+                ssize_t i = 0;
+
+                while (buff[i] != '\0') {
+                    if (!(isalnum(buff[i]) || buff[i] == '_')) {
+                        self->send_strliteral("ERR: Username contains illegal "
+                                              "character(s).\nERR: Try again: ");
+                        free(buff);
+                        buff = NULL;
+                        break;
+                    }
+                    i++;
+                }
+
+                if (buff) {
+                    if (i < 2 || i > 20) {
+                        self->send_strliteral("ERR: Username should between 2 "
+                                              "and 20 characters length.\n"
+                                              "ERR: Try again: ");
+                        free(buff);
+                    } else {
+                        auto username_cpy = (char *) malloc(sizeof(char) *
+                                                            (len + 1));
+                        strcpy(username_cpy, buff);
+                        self->send_strliteral("SRV: Hello @");
+                        self->send(username_cpy, len);
+                        self->send_strliteral("\nSRV: Please enter your "
+                                              "password: ");
+                        username = buff;
+                    }
+                }
+            } else {
+                if (strlen(buff) != len) {
+                    self->send_strliteral("ERR: Password contains null-byte.");
+
+                    free(buff);
+                } else if (len < 8 || len > 64) {
+                    self->send_strliteral("ERR: Password should between 8 and "
+                                          "64 characters length.\nERR: Try "
+                                          "again: ");
+
+                    free(buff);
+                } else {
+                    password = buff;
+                }
+            }
+
+            if (username && password) {
+                // TODO: authentication
+            }
         }
-
-        if (payload)
-            delete payload;
     }
 }
 
