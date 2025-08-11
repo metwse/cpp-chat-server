@@ -20,15 +20,19 @@ This compiles with debug symbols (`-g3`) and assertions enabled into
 |--|--|
 | `make run` | Runs the optimized binary. |
 | `make debug` | Runs the debug binary inside `gdb`. |
-| `make memleak` | Runs the project with `valgrind`. |
+| `make memcheck` | Runs the project with `valgrind`. |
 
 ## Tests
 Unit tests are automatically discovered if files end with `.test.c` or
-`.test.cpp.`.
+`.test.cpp.`. For C++ tests, append `.xx` to the Make target name.
 
 For example, if you have a file like `chatd/collections/vec.test.c`, you can:
 - Build it with: `make build_test_colections/vec`
 - Run it under `gdb` with: `make test_collections/vec`
+- Run it under `valgrind` with: `make memcheck_test_collections/vec`
+
+For C++, Make targets are the same but postfixed with `.xx`. I.e. to run
+`chatd/collections/vec.test.cpp`, use `make test_collections/vec.xx`.
 
 > Note: Test binaries are placed under target/tests.
 
