@@ -8,6 +8,9 @@
 #include <memory>
 
 
+#define WELCOME_MESSAGE "Welcome to the chat relay!\n" \
+                        "Please enter your username: "
+
 /**
  * class User - User data
  */

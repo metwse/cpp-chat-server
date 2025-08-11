@@ -51,7 +51,7 @@ enum tcp_stream_result tcp_stream_readuntil(struct tcp_stream *stream,
 	stream->buff_len = 0;
 
 	while (true) {
-		size_t read_bytes = read(stream->sockfd,
+		ssize_t read_bytes = read(stream->sockfd,
 					 buff, TCP_STREAM_BUFF_CAP);
 		if (read_bytes <= 0)
 			break;

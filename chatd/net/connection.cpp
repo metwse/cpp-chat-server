@@ -2,6 +2,7 @@ extern "C" {
 #include <chatd/net/tcp/stream.h>
 }
 
+#include <mutex>
 #include <atomic>
 #include <thread>
 #include <chrono>
@@ -32,7 +33,9 @@ Connection::~Connection() {
 
     for (size_t i = 0; i < m_tx_queue.get_size(); i++) {
         auto payload = (struct outgoing_payload *) m_tx_queue.pop_back();
-free(payload->buff); delete payload;
+        if (!payload->string_literal)
+            free(payload->buff);
+        delete payload;
     }
 }
 
@@ -73,11 +76,17 @@ void Connection::tx_thread(std::shared_ptr<Connection> self) {
         if (self->m_is_killed)
             return;
 
-    std::unique_lock<std::mutex> lk(self->m_tx_queue_mutex);
+    bool initial_message = true;
     bool end = false;
 
     while (!self->m_is_killed.load()) {
-        self->m_tx_condvar.wait(lk);
+        if (initial_message) {
+            std::lock_guard<std::mutex> guard(self->m_tx_queue_mutex);
+            initial_message = false;
+        } else {
+            std::unique_lock<std::mutex> lk(self->m_tx_queue_mutex);
+            self->m_tx_condvar.wait(lk);
+        }
 
         while (self->m_tx_queue.get_size() && !end) {
             auto payload = (struct outgoing_payload *)
@@ -93,7 +102,6 @@ void Connection::tx_thread(std::shared_ptr<Connection> self) {
 
             if (!payload->string_literal)
                 free(payload->buff);
-
             delete payload;
         }
 
@@ -103,26 +111,28 @@ void Connection::tx_thread(std::shared_ptr<Connection> self) {
 }
 
 void Connection::send(char *buff, size_t len) {
-    std::lock_guard<std::mutex> guard(m_tx_queue_mutex);
-
     auto payload = new struct outgoing_payload;
     payload->buff = buff;
     payload->len = len;
     payload->string_literal = false;
 
-    m_tx_queue.push_front(payload);
+    {
+        std::lock_guard<std::mutex> guard(m_tx_queue_mutex);
+        m_tx_queue.push_front(payload);
+    }
     m_tx_condvar.notify_one();
 }
 
 void Connection::send_strliteral(const char *cstr) {
-    std::lock_guard<std::mutex> guard(m_tx_queue_mutex);
-
     auto payload = new struct outgoing_payload;
     payload->cstr = cstr;
     payload->len = strlen(cstr);
     payload->string_literal = true;
 
-    m_tx_queue.push_front(payload);
+    {
+        std::lock_guard<std::mutex> guard(m_tx_queue_mutex);
+        m_tx_queue.push_front(payload);
+    }
     m_tx_condvar.notify_one();
 }
 

@@ -10,6 +10,7 @@ extern "C" {
 #include <cassert>
 #include <cstdlib>
 
+#include <chatd/protocol/protocol.hpp>
 #include <chatd/net/server.hpp>
 #include <chatd/net/connection.hpp>
 
@@ -109,6 +110,13 @@ void stream_thread(size_t i) {
 
     char *buff;
     size_t len;
+
+    // Ignore the welcome message sent by server.
+    assert(!tcp_stream_readuntil(&conn, ':', &buff, &len));
+    assert(!memcmp(buff, WELCOME_MESSAGE, strlen(WELCOME_MESSAGE) - 2));
+    free(buff);
+    tcp_stream_readuntil(&conn, ' ', &buff, &len);
+    free(buff);
 
     for (size_t j = 0; j < 16; j++) {
         assert(!tcp_stream_readuntil(&conn, '\n', &buff, &len));

@@ -44,23 +44,25 @@ void test() {
             srv.serve_forever();
         });
 
-        auto client_count = (rand() % 10) + 1;
-        srv.conn_limit = client_count;
+        auto client_count = ((rand() % 10) + 1) * 2;
+        srv.conn_limit = client_count + 1;
 
         std::thread *client_threads = new std::thread[client_count];
 
-        for (int i = 0; i < client_count / 2; i++)
+        for (int i = 0; i < client_count / 2; i++) {
             client_threads[i] = std::thread(connection_instantexit);
-
-        for (int i = client_count / 2; i < client_count; i++)
-            client_threads[i] = std::thread(connection);
+            client_threads[client_count / 2 + i] = std::thread(connection);
+        }
 
         for (int i = 0; i < client_count; i++)
             client_threads[i].join();
 
-        assert(!tcp_listener_destroy(&srv.m_listener));
-
         delete[] client_threads;
+
+        struct tcp_stream conn;
+        assert(!tcp_stream_init(&conn, TEST_HOST, TEST_PORT));
+        tcp_stream_destroy(&conn);
+
         srv_thread.join();
     }
 }
