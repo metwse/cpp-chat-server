@@ -35,7 +35,7 @@ void test() {
         srv.serve_forever();
     });
 
-    while (srv.connection_pool == NULL)
+    while (srv.connection_pool == nullptr)
         ;
     auto pool = srv.connection_pool;
     srv.conn_limit = CONNECTION_COUNT + 1;
@@ -46,7 +46,7 @@ void test() {
         client_threads[i] = std::thread(stream_thread, i);
 
         while (true) {
-            std::lock_guard<std::mutex> guard(srv.connection_pool->m_mutex);
+            std::lock_guard<std::mutex> guard(srv.connection_pool->m_conns_m);
             if (pool->m_conns.get_size() == i + 1)
                 break;
         }

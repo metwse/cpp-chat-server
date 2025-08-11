@@ -10,7 +10,6 @@ extern "C" {
 #include <cstdint>
 
 
-class Connection;
 class ConnectionPool;
 
 /**
@@ -42,12 +41,10 @@ public:
 #ifdef _DEBUG
     size_t conn_limit{};
 
-    ConnectionPool *connection_pool{NULL};
+    ConnectionPool *connection_pool { nullptr };
 #endif
 
 private:
-    friend Connection;
-
 #ifdef _DEBUG
     friend void test();
 #endif
