@@ -43,23 +43,27 @@ int main() {
 
 void test_message() {
     const char *valid_msgs[] = {
-        "global message",
+        "global message\r",
         "#channel message",
-        "#channel    message   ",
+        "#channel    message   \r",
         "@direct direct",
         "@direct    direct   ",
-        "@a e",
+        "@a e\r",
         "#a e",
-        "a",
-        " ",
+        "a\r",
+        " \r",
         "@a  ",
         "#e  ",
     };
 
     const char *invalid_msgs[] = {
         "",
-        "#",
+        "\r",
+        "\r\r\r",
+        "mesg \r\r\r\r",
+        "\r#",
         "@",
+        "#",
         "#nocontent",
         "@nocontent",
         "# nochannel",

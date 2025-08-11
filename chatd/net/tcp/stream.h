@@ -57,6 +57,6 @@ enum tcp_stream_result tcp_stream_readuntil(struct tcp_stream *,
  * Ensures the outbuffer null-terminated.
  */
 enum tcp_stream_result tcp_stream_write(struct tcp_stream *,
-					char *buff, size_t len);
+					const char *buff, size_t len);
 
 #endif

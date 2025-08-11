@@ -11,8 +11,8 @@
 #include <sys/unistd.h>
 
 
-enum tcp_stream_result tcp_stream_write(struct tcp_stream *stream, char *buff,
-					size_t len)
+enum tcp_stream_result tcp_stream_write(struct tcp_stream *stream,
+					const char *buff, size_t len)
 {
 	return write(stream->sockfd, buff, len) == len ?
 		TCP_STREAM_OK : TCP_STREAM_WRITEE;

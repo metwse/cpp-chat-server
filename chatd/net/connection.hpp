@@ -31,6 +31,8 @@ public:
 
     void send(char *buff, size_t len);
 
+    void send_strliteral(const char *cstring);
+
 private:
     friend ConnectionPool;
 

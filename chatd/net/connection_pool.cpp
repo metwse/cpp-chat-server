@@ -18,11 +18,18 @@ ConnectionPool::ConnectionPool() {
             std::this_thread::sleep_for(std::chrono::milliseconds(64));
 
             lk.lock();
-            for (int i = 0; i < m_conns.get_size(); i++) {
+            bool removed = false;
+            for (size_t i = 0; i < m_conns.get_size(); i++) {
+                if (removed) {
+                    i--;
+                    removed = false;
+                }
+
                 auto conn = (std::shared_ptr<Connection> *) m_conns[i];
 
                 if (!(*conn)->m_is_ready.load()) {
-                    m_conns.remove(i--);
+                    m_conns.remove(i);
+                    removed = true;
 
                     (*conn)->shutdown();
                     delete conn;

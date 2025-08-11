@@ -17,9 +17,7 @@ extern "C" {
 #define TEST_HOST "127.0.0.1"
 #define TEST_PORT 15536
 
-#define CONNECTION_COUNT 2
-
-static bool end = false;
+#define CONNECTION_COUNT 16
 
 static char *payloads_sent[CONNECTION_COUNT][16];
 static char *payloads_recv[CONNECTION_COUNT][16];
@@ -39,8 +37,7 @@ void test() {
     while (srv.connection_pool == NULL)
         ;
     auto pool = srv.connection_pool;
-
-    srv.conn_limit = CONNECTION_COUNT;
+    srv.conn_limit = CONNECTION_COUNT + 1;
 
     std::thread *client_threads = new std::thread[CONNECTION_COUNT];
 
@@ -62,14 +59,15 @@ void test() {
             conn->send(payloads_sent[i][j], 16);
     }
 
-    end = true;
-
     for (size_t i = 0; i < CONNECTION_COUNT; i++)
         client_threads[i].join();
 
-    assert(!tcp_listener_destroy(&srv.m_listener));
-
     delete[] client_threads;
+
+    struct tcp_stream conn;
+    assert(!tcp_stream_init(&conn, TEST_HOST, TEST_PORT));
+    tcp_stream_destroy(&conn);
+
     srv_thread.join();
 }
 
@@ -119,9 +117,6 @@ void stream_thread(size_t i) {
         free(payloads_recv[i][j]);
         free(buff);
     }
-
-    while (!end)
-        ;
 
     tcp_stream_destroy(&conn);
 }

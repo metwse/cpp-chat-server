@@ -12,11 +12,15 @@ static inline bool is_valid_char(char c) {
 
 
 Payload *Payload::parse(char *buff, size_t len) {
-    for (size_t i = 0; i < len; i++)
-        if (!is_valid_char(buff[i])) {
+    for (size_t i = 0; i < len; i++) {
+        if (buff[i] == '\r' && i == len - 1) {
+            buff[i] = '\0';
+            len--;
+        } else if (!is_valid_char(buff[i])) {
             free(buff);
             return NULL;
         }
+    }
 
     if (buff[0] == '/') {
         cmd::Command *cmd = NULL;

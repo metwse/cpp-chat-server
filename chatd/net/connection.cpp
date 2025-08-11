@@ -7,14 +7,19 @@ extern "C" {
 #include <chrono>
 #include <memory>
 #include <cstdlib>
+#include <cstring>
 
 #include <chatd/net/connection.hpp>
 #include <chatd/protocol/protocol.hpp>
 
 
 struct outgoing_payload {
-    char *buff;
+    union {
+        char *buff;
+        const char *cstr;
+    };
     size_t len;
+    bool string_literal { false };
 };
 
 Connection::Connection(struct tcp_stream stream, ConnectionPool *pool) :
@@ -27,9 +32,7 @@ Connection::~Connection() {
 
     for (size_t i = 0; i < m_tx_queue.get_size(); i++) {
         auto payload = (struct outgoing_payload *) m_tx_queue.pop_back();
-
-        free(payload->buff);
-        delete payload;
+free(payload->buff); delete payload;
     }
 }
 
@@ -50,6 +53,9 @@ void Connection::rx_thread(std::shared_ptr<Connection> self) {
         }
 
         auto payload = Payload::parse(buff, len);
+
+        if (!payload)
+            continue;
 
         if (payload->kind() == Payload::Kind::Command) {
             // auto _ = dynamic_cast<cmd::Command *>(payload);
@@ -77,12 +83,17 @@ void Connection::tx_thread(std::shared_ptr<Connection> self) {
             auto payload = (struct outgoing_payload *)
                 self->m_tx_queue.pop_back();
 
-            if (tcp_stream_write(&self->m_stream, payload->buff, payload->len)) {
+            if (tcp_stream_write(&self->m_stream,
+                                 payload->string_literal ?
+                                     payload->cstr : payload->buff,
+                                 payload->len)) {
                 self->m_is_ready = false;
                 end = true;
             }
 
-            free(payload->buff);
+            if (!payload->string_literal)
+                free(payload->buff);
+
             delete payload;
         }
 
@@ -97,6 +108,19 @@ void Connection::send(char *buff, size_t len) {
     auto payload = new struct outgoing_payload;
     payload->buff = buff;
     payload->len = len;
+    payload->string_literal = false;
+
+    m_tx_queue.push_front(payload);
+    m_tx_condvar.notify_one();
+}
+
+void Connection::send_strliteral(const char *cstr) {
+    std::lock_guard<std::mutex> guard(m_tx_queue_mutex);
+
+    auto payload = new struct outgoing_payload;
+    payload->cstr = cstr;
+    payload->len = strlen(cstr);
+    payload->string_literal = true;
 
     m_tx_queue.push_front(payload);
     m_tx_condvar.notify_one();
