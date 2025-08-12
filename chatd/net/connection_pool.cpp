@@ -6,6 +6,7 @@ extern "C" {
 #include <memory>
 #include <thread>
 #include <chrono>
+#include <cstring>
 
 #include <chatd/net/connection.hpp>
 #include <chatd/protocol/protocol.hpp>
@@ -57,4 +58,31 @@ void ConnectionPool::push(struct tcp_stream stream) {
         std::lock_guard<std::mutex> guard(m_conns_m);
         m_conns.push(conn);
     }
+}
+
+std::shared_ptr<User> ConnectionPool::get_user(const char *username) {
+    std::lock_guard<std::mutex> guard(m_users_m);
+
+    for (size_t i = 0; i < m_users.get_size(); i++) {
+        auto user = *(std::shared_ptr<User> *) m_users[i];
+
+        if (!strcmp(username, user->username))
+            return user;
+    }
+
+    return std::shared_ptr<User>(nullptr);
+}
+
+bool ConnectionPool::push_user(std::shared_ptr<User> *new_user) {
+    std::lock_guard<std::mutex> guard(m_users_m);
+
+    for (size_t i = 0; i < m_users.get_size(); i++) {
+        auto user = *(std::shared_ptr<User> *) m_users[i];
+
+        if (!strcmp((*new_user)->username, user->username))
+            return false;
+    }
+
+    m_users.push(new_user);
+    return true;
 }

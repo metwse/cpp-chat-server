@@ -96,12 +96,20 @@ void Connection::tx_thread(std::shared_ptr<Connection> self) {
             delete payload;
         }
 
+        if (self->m_is_gracefully_terminated.load())
+            self->terminate();
+
         if (terminated)
             break;
     }
 }
 
 void Connection::send(char *buff, size_t len) {
+    if (m_is_gracefully_terminated) {
+        free(buff);
+        return;
+    }
+
     auto payload = new struct outgoing_payload;
     payload->buff = buff;
     payload->len = len;
@@ -132,6 +140,11 @@ void Connection::terminate() {
         tcp_stream_destroy(&m_stream);
         m_tx_queue_cv.notify_one();
     }
+}
+
+void Connection::gracefully_terminate() {
+    if (!m_is_gracefully_terminated.exchange(true, std::memory_order_seq_cst))
+        m_tx_queue_cv.notify_one();
 }
 
 void Connection::shutdown() {

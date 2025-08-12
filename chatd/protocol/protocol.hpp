@@ -18,14 +18,14 @@ class ConnectionPool;
  */
 class User {
 public:
-    User(const char *username_, const char *password_)
+    User(char *username_, char *password_)
         : username { username_ }, password { password_ }
     {}
 
-    ~User() = default;
+    ~User();
 
-    const char *username;
-    const char *password;
+    char *username;
+    char *password;
 
     Vec channels;
 };

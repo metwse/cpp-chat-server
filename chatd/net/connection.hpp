@@ -8,6 +8,7 @@ extern "C" {
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include <memory>
 #include <condition_variable>
 
 #include <chatd/protocol/protocol.hpp>
@@ -30,12 +31,17 @@ public:
     ~Connection();
 
     /**
-     * terminate() - Gracefully terminate the connection.
+     * terminate() - Instantly terminates the connection and discards the
+     *               message queue.
+     */
+    void terminate();
+    /**
+     * gracefully_terminate() - Gracefully terminates the connection.
      *
      * Initiates a graceful shutdown of the client connection, signals the
      * connection handler loop to exit.
      */
-    void terminate();
+    void gracefully_terminate();
 
     /**
      * send() - Send data to the connected client.
@@ -101,6 +107,11 @@ private:
      * @m_is_ready: Atomic flag indicating connection readiness.
      */
     std::atomic_bool m_is_ready { false };
+    /*
+     * @m_is_gracefully_terminated: Atomic flag the indicating connection is
+     *                             currently shutting down.
+     */
+    std::atomic_bool m_is_gracefully_terminated { false };
 
     /**
      * shutdown() - Terminate the connection and cleanup threads.
@@ -150,6 +161,9 @@ class ConnectionPool {
 public:
     ConnectionPool(ConnectionPool &) = delete;
 
+    std::shared_ptr<User> get_user(const char *username);
+    bool push_user(std::shared_ptr<User> *);
+
 private:
     friend Server;
     friend Connection;
@@ -184,6 +198,12 @@ private:
      */
     Vec m_conns;
     std::mutex m_conns_m;
+
+    /**
+     * @m_users: Container holding users
+     */
+    Vec m_users;
+    std::mutex m_users_m;
 
 
     /**

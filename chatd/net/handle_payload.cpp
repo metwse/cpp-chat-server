@@ -1,3 +1,4 @@
+#include "chatd/protocol/protocol.hpp"
 #include <cstring>
 #include <cctype>
 #include <cstdlib>
@@ -6,8 +7,8 @@
 
 
 void Connection::handle_payload(char *buff, size_t len) {
-    static thread_local bool authenticated { false };
-    static thread_local char *username { NULL }, *password { NULL };
+    thread_local bool authenticated { false }, new_account { false };
+    thread_local char *username { NULL }, *password { NULL };
 
     if (authenticated) {
         auto payload = Payload::parse(buff, len);
@@ -58,7 +59,7 @@ void Connection::handle_payload(char *buff, size_t len) {
                     username = buff;
                 }
             }
-        } else {
+        } else if (password == NULL) {
             if (strlen(buff) != len) {
                 send_strliteral("ERR: Password contains null-byte.");
 
@@ -74,7 +75,47 @@ void Connection::handle_payload(char *buff, size_t len) {
         }
 
         if (username && password) {
-            // TODO: authentication
+            if (new_account && (buff[0] == 'y' || buff[0] == 'n')) {
+                if (buff[0] == 'y') {
+                    auto new_user = new std::shared_ptr<User>(
+                        new User { username, password }
+                    );
+                    if (m_pool->push_user(new_user)) {
+                        send_strliteral("SRV: Hello @");
+                        send_strliteral(username);
+                        send_strliteral("!\n");
+                        authenticated = true;
+                        user = std::shared_ptr<User>(*new_user);
+                    } else {
+                        send_strliteral("EXIT: Cannot create user.\n");
+                        gracefully_terminate();
+                    }
+                } else {
+                    send_strliteral("EXIT: Bye!\n");
+                    free(username);
+                    free(password);
+                    gracefully_terminate();
+                }
+            } else {
+                auto existing_user = m_pool->get_user(username);
+                if (existing_user) {
+                    if (!strcmp(existing_user->password, password)) {
+                        send_strliteral("SRV: Hello @");
+                        send(username, strlen(username));
+                        send_strliteral("!\n");
+                        authenticated = true;
+                        user = std::shared_ptr<User>(existing_user);
+                    } else {
+                        send_strliteral("ERR: Invalid password! Try again: ");
+                    }
+                    free(password);
+                    password = NULL;
+                } else {
+                    send_strliteral("SRV: No user has found, would you like to "
+                                    "a account? (y/n): ");
+                    new_account = true;
+                }
+            }
         }
     }
 }
