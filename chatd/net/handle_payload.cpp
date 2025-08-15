@@ -1,14 +1,25 @@
-#include "chatd/protocol/protocol.hpp"
 #include <cstring>
 #include <cctype>
 #include <cstdlib>
 
+#include <chatd/protocol/protocol.hpp>
 #include <chatd/net/connection.hpp>
 
 
 void Connection::handle_payload(char *buff, size_t len) {
     thread_local bool authenticated { false }, new_account { false };
     thread_local char *username { NULL }, *password { NULL };
+
+    if (buff == NULL) {
+        if (!authenticated) {
+            if (username)
+                free(username);
+            if (password)
+                free(password);
+        }
+
+        return;
+    }
 
     if (authenticated) {
         auto payload = Payload::parse(buff, len);
@@ -77,23 +88,22 @@ void Connection::handle_payload(char *buff, size_t len) {
         if (username && password) {
             if (new_account && (buff[0] == 'y' || buff[0] == 'n')) {
                 if (buff[0] == 'y') {
-                    auto new_user = new std::shared_ptr<User>(
-                        new User { username, password }
-                    );
-                    if (m_pool->push_user(new_user)) {
+                    auto new_user = std::make_shared<User>(username, password);
+                    auto new_user_heap = new std::shared_ptr<User>;
+                    *new_user_heap = new_user;
+                    if (m_pool->push_user(new_user_heap)) {
                         send_strliteral("SRV: Hello @");
                         send_strliteral(username);
                         send_strliteral("!\n");
                         authenticated = true;
-                        user = std::shared_ptr<User>(*new_user);
+                        user = new_user;
                     } else {
                         send_strliteral("EXIT: Cannot create user.\n");
+                        delete new_user_heap;
                         gracefully_terminate();
                     }
                 } else {
                     send_strliteral("EXIT: Bye!\n");
-                    free(username);
-                    free(password);
                     gracefully_terminate();
                 }
             } else {
@@ -104,7 +114,7 @@ void Connection::handle_payload(char *buff, size_t len) {
                         send(username, strlen(username));
                         send_strliteral("!\n");
                         authenticated = true;
-                        user = std::shared_ptr<User>(existing_user);
+                        user = existing_user;
                     } else {
                         send_strliteral("ERR: Invalid password! Try again: ");
                     }

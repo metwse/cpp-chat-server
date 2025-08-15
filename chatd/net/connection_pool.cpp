@@ -43,6 +43,12 @@ ConnectionPool::ConnectionPool() {
 ConnectionPool::~ConnectionPool() {
     m_is_running = false;
     m_gc_thread.join();
+
+    for (size_t i = 0; i < m_users.get_size(); i++) {
+        auto user = (std::shared_ptr<User> *) m_conns[i];
+
+        delete user;
+    }
 }
 
 void ConnectionPool::push(struct tcp_stream stream) {

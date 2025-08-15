@@ -1,6 +1,5 @@
 extern "C" {
 #include <chatd/net/tcp/stream.h>
-#include <chatd/net/tcp/listener.h>
 }
 
 #include <ctime>

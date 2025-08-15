@@ -33,7 +33,7 @@ Connection::~Connection() {
     delete m_tx_thread;
 
     for (size_t i = 0; i < m_tx_queue.get_size(); i++) {
-        auto payload = (struct outgoing_payload *) m_tx_queue.pop_back();
+        auto payload = (struct outgoing_payload *) m_tx_queue[i];
         if (!payload->string_literal)
             free(payload->buff);
         delete payload;
@@ -58,6 +58,8 @@ void Connection::rx_thread(std::shared_ptr<Connection> self) {
 
         self->handle_payload(buff, len);
     }
+
+    self->handle_payload(NULL, 0);
 }
 
 void Connection::tx_thread(std::shared_ptr<Connection> self) {
