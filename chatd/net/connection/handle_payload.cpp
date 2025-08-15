@@ -4,6 +4,7 @@
 
 #include <chatd/protocol/protocol.hpp>
 #include <chatd/net/connection.hpp>
+#include <chatd/net/server.hpp>
 
 
 void Connection::handle_payload(char *buff, size_t len) {

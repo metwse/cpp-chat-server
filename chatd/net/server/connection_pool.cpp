@@ -8,6 +8,7 @@ extern "C" {
 #include <chrono>
 #include <cstring>
 
+#include <chatd/net/server.hpp>
 #include <chatd/net/connection.hpp>
 #include <chatd/protocol/protocol.hpp>
 

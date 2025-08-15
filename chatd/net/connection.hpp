@@ -6,13 +6,11 @@ extern "C" {
 }
 
 #include <thread>
-#include <mutex>
 #include <atomic>
 #include <memory>
 #include <condition_variable>
 
 #include <chatd/protocol/protocol.hpp>
-#include <chatd/net/server.hpp>
 #include <chatd/collections/ringbuffer.hpp>
 
 
@@ -149,75 +147,6 @@ private:
     Ringbuffer m_tx_queue;
     std::mutex m_tx_queue_m;
     std::condition_variable m_tx_queue_cv;
-};
-
-/**
- * class ConnectionPool - Manages multiple client connections
- *
- * Provides connection pooling functionality for managing multiple concurrent
- * client connections to the chatd server.
- */
-class ConnectionPool {
-public:
-    ConnectionPool(ConnectionPool &) = delete;
-
-    std::shared_ptr<User> get_user(const char *username);
-    bool push_user(std::shared_ptr<User> *);
-
-private:
-    friend Server;
-    friend Connection;
-
-#ifdef _DEBUG
-    friend void test();
-#endif
-
-    /**
-     * ConnectionPool() - Constructor for ConnectionPool
-     *
-     * Initializes an empty connection pool ready to accept and manage client
-     * connections.
-     */
-    ConnectionPool();
-
-    ~ConnectionPool();
-
-    /**
-     * push() - Add a new connection to the pool
-     * @stream: TCP stream for the new client connection
-     *
-     * Creates a new Connection object from the provided TCP stream and adds it
-     * to the pool for management. The connection will be handled in a thread.
-     */
-    void push(struct tcp_stream stream);
-
-    /**
-     * @m_conns: Container holding active connections
-     *
-     * Stores and manages all active Connection objects in the pool.
-     */
-    Vec m_conns;
-    std::mutex m_conns_m;
-
-    /**
-     * @m_users: Container holding users
-     */
-    Vec m_users;
-    std::mutex m_users_m;
-
-
-    /**
-     * @m_gc_thread: Garbage collector thread handle
-     *
-     * Thread responsible for periodic cleanup of terminated connections and
-     * resource management. Runs independently to maintain pool health without
-     * blocking connection operations.
-     */
-    std::thread m_gc_thread;
-    /**
-     * @m_is_running: Flag controlling garbage collector thread state.
-     */
-    bool m_is_running { true };
 };
 
 #endif
