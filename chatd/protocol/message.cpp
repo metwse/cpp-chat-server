@@ -1,12 +1,29 @@
+extern "C" {
+#include <chatd/net/tcp/stream.h>
+}
+
+#include <cstring>
+
 #include <chatd/protocol/protocol.hpp>
 
 
-void cmd::Subscribe::operator()(Connection &, ConnectionPool &) {}
+#define UNWRAP(e) \
+    if (e) \
+        return false;
 
-void cmd::Unsubscribe::operator()(Connection &, ConnectionPool &) {}
+bool msg::DirectMessage::send(struct tcp_stream &s) {
+    UNWRAP(tcp_stream_write(&s, "@", 1));
+    UNWRAP(tcp_stream_write(&s, user->username, strlen(user->username)));
+    UNWRAP(tcp_stream_write(&s, ": ", 2));
+    UNWRAP(tcp_stream_write(&s, content, strlen(content)));
+    UNWRAP(tcp_stream_write(&s, "\n", 1));
+    return true;
+}
 
-void cmd::Delete::operator()(Connection &, ConnectionPool &) {}
+bool msg::GroupMessage::send(struct tcp_stream &) {
+    return true;
+}
 
-void cmd::Logout::operator()(Connection &, ConnectionPool &) {}
-
-void cmd::ListUsers::operator()(Connection &, ConnectionPool &) {}
+bool msg::GlobalMessage::send(struct tcp_stream &) {
+    return true;
+}

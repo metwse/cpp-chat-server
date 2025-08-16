@@ -80,7 +80,9 @@ Payload *Payload::parse(char *buff, size_t len) {
             return NULL;
         }
 
-        for (size_t i = 1; i < len; i++) {
+        size_t i;
+
+        for (i = 1; i < len; i++) {
             if (buff[i] == ' ') {
                 if (i == 1) {
                     free(buff);
@@ -98,8 +100,8 @@ Payload *Payload::parse(char *buff, size_t len) {
 
         if (buff[0] == '@') {
             auto msg = new msg::DirectMessage();
-            msg->to = buff;
-            msg->content = &buff[len + 1];
+            msg->to = buff + 1;
+            msg->content = &buff[i + 1];
 
             msg->buff = buff;
             msg->len = len;
@@ -107,8 +109,8 @@ Payload *Payload::parse(char *buff, size_t len) {
             return msg;
         } else {
             auto msg = new msg::GroupMessage();
-            msg->to = buff;
-            msg->content = &buff[len + 1];
+            msg->to = buff + 1;
+            msg->content = &buff[i + 1];
 
             msg->buff = buff;
             msg->len = len;

@@ -5,6 +5,7 @@
 #include <chatd/protocol/protocol.hpp>
 #include <chatd/net/connection.hpp>
 #include <chatd/net/server.hpp>
+#include <mutex>
 
 
 void Connection::handle_payload(char *buff, size_t len) {
@@ -29,13 +30,27 @@ void Connection::handle_payload(char *buff, size_t len) {
             return;
 
         if (payload->kind() == Payload::Kind::Command) {
-            // auto _ = dynamic_cast<cmd::Command *>(payload);
-        } else if (payload->kind() == Payload::Kind::Message) {
-            // auto _ = dynamic_cast<msg::Message *>(payload);
-        }
-
-        if (payload)
+            auto cmd = dynamic_cast<cmd::Command *>(payload);
+            (*cmd)(this, this->m_pool);
             delete payload;
+        } else if (payload->kind() == Payload::Kind::Message) {
+            auto msg = std::shared_ptr<msg::Message>(
+                dynamic_cast<msg::Message *>(payload)
+            );
+            msg->user = this->user;
+
+            std::lock_guard<std::mutex> guard(m_pool->m_conns_m);
+            if (typeid(*payload) == typeid(msg::DirectMessage)) {
+                auto dm = dynamic_cast<msg::DirectMessage *>(payload);
+
+                for (size_t i = 0; i < m_pool->m_conns.get_size(); i++) {
+                    auto conn = *(std::shared_ptr<Connection> *)
+                        m_pool->m_conns[i];
+                    if (conn->user && strcmp(conn->user->username, dm->to) == 0)
+                        conn->send_message(msg);
+                }
+            }
+        }
     } else {
         if (buff[len - 1] == '\r') {
             buff[len - 1] = '\0';
@@ -84,7 +99,7 @@ void Connection::handle_payload(char *buff, size_t len) {
             } else {
                 password = buff;
             }
-        }
+       }
 
         if (username && password) {
             if (new_account && (buff[0] == 'y' || buff[0] == 'n')) {
@@ -97,7 +112,7 @@ void Connection::handle_payload(char *buff, size_t len) {
                         send_strliteral(username);
                         send_strliteral("!\n");
                         authenticated = true;
-                        user = new_user;
+                        user = *new_user_heap;
                     } else {
                         send_strliteral("EXIT: Cannot create user.\n");
                         delete new_user_heap;

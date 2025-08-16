@@ -1,6 +1,7 @@
 #ifndef PROTOCOL_HPP
 #define PROTOCOL_HPP
 
+#include <chatd/net/tcp/stream.h>
 #include <chatd/collections/vec.hpp>
 
 #include <cstddef>
@@ -84,7 +85,7 @@ public:
      * Converts the message object into a string format suitable for
      * transmission over the network and sends it.
      */
-    virtual void send(Connection &) = 0;
+    virtual bool send(struct tcp_stream &) = 0;
 };
 
 /**
@@ -95,7 +96,7 @@ public:
     DirectMessage() = default;
     virtual ~DirectMessage() = default;
 
-    void send(Connection &) override;
+    bool send(struct tcp_stream &) override;
 
     char *content;
     char *to;
@@ -109,7 +110,7 @@ public:
     GroupMessage() = default;
     virtual ~GroupMessage() = default;
 
-    void send(Connection &) override;
+    bool send(struct tcp_stream &) override;
 
     char *content;
     char *to;
@@ -124,7 +125,7 @@ public:
     GlobalMessage() = default;
     virtual ~GlobalMessage() = default;
 
-    void send(Connection &) override;
+    bool send(struct tcp_stream &) override;
 
     char *content;
 };
@@ -154,7 +155,7 @@ public:
      *
      * Pure virtual function that executes the specific command logic.
      */
-    virtual void operator()(Connection &, ConnectionPool &) = 0;
+    virtual void operator()(Connection *, ConnectionPool *) = 0;
 
     /**
      * @args: Command arguments
@@ -176,7 +177,7 @@ public:
     Subscribe() = default;
     virtual ~Subscribe() = default;
 
-    void operator()(Connection &, ConnectionPool &) override;
+    void operator()(Connection *, ConnectionPool *) override;
 };
 
 /**
@@ -190,7 +191,7 @@ public:
     Unsubscribe() = default;
     virtual ~Unsubscribe() = default;
 
-    void operator()(Connection &, ConnectionPool &) override;
+    void operator()(Connection *, ConnectionPool *) override;
 };
 
 /**
@@ -205,7 +206,7 @@ public:
     ListUsers() = default;
     virtual ~ListUsers() = default;
 
-    void operator()(Connection &, ConnectionPool &) override;
+    void operator()(Connection *, ConnectionPool *) override;
 };
 
 /**
@@ -219,7 +220,7 @@ public:
     Delete() = default;
     virtual ~Delete() = default;
 
-    void operator()(Connection &, ConnectionPool &) override;
+    void operator()(Connection *, ConnectionPool *) override;
 };
 
 /**
@@ -233,7 +234,7 @@ public:
     Logout() = default;
     virtual ~Logout() = default;
 
-    void operator()(Connection &, ConnectionPool &) override;
+    void operator()(Connection *, ConnectionPool *) override;
 };
 
 }

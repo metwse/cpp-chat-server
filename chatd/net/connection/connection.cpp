@@ -14,13 +14,21 @@ extern "C" {
 #include <chatd/protocol/protocol.hpp>
 
 
-struct outgoing_payload {
+enum class PayloadKind {
+    StringLiteral,
+    Buff,
+    Message,
+};
+
+class Connection::OutgoingPayload {
+public:
     union {
         char *buff;
         const char *cstr;
+        std::shared_ptr<msg::Message> *msg;
     };
     size_t len;
-    bool string_literal { false };
+    enum PayloadKind kind;
 };
 
 Connection::Connection(struct tcp_stream stream,
@@ -33,9 +41,11 @@ Connection::~Connection() {
     delete m_tx_thread;
 
     for (size_t i = 0; i < m_tx_queue.get_size(); i++) {
-        auto payload = (struct outgoing_payload *) m_tx_queue[i];
-        if (!payload->string_literal)
+        auto payload = (OutgoingPayload *) m_tx_queue[i];
+
+        if (payload->kind == PayloadKind::Buff)
             free(payload->buff);
+
         delete payload;
     }
 }
@@ -82,19 +92,23 @@ void Connection::tx_thread(std::shared_ptr<Connection> self) {
         }
 
         while (self->m_tx_queue.get_size() && !terminated) {
-            auto payload = (struct outgoing_payload *)
+            auto payload = (OutgoingPayload *)
                 self->m_tx_queue.pop_back();
 
-            if (tcp_stream_write(&self->m_stream,
-                                 payload->string_literal ?
+            if ((
+                    payload->kind == PayloadKind::Message &&
+                    !(*payload->msg)->send(self->m_stream)
+                ) || tcp_stream_write(&self->m_stream,
+                                 payload->kind == PayloadKind::StringLiteral ?
                                      payload->cstr : payload->buff,
                                  payload->len)) {
                 self->m_is_ready = false;
                 terminated = true;
             }
 
-            if (!payload->string_literal)
+            if (payload->kind == PayloadKind::Buff)
                 free(payload->buff);
+
             delete payload;
         }
 
@@ -106,17 +120,7 @@ void Connection::tx_thread(std::shared_ptr<Connection> self) {
     }
 }
 
-void Connection::send(char *buff, size_t len) {
-    if (m_is_gracefully_terminated) {
-        free(buff);
-        return;
-    }
-
-    auto payload = new struct outgoing_payload;
-    payload->buff = buff;
-    payload->len = len;
-    payload->string_literal = false;
-
+void Connection::push_payload(OutgoingPayload *payload) {
     {
         std::lock_guard<std::mutex> guard(m_tx_queue_m);
         m_tx_queue.push_front(payload);
@@ -124,17 +128,37 @@ void Connection::send(char *buff, size_t len) {
     m_tx_queue_cv.notify_one();
 }
 
+void Connection::send(char *buff, size_t len) {
+    if (m_is_gracefully_terminated) {
+        free(buff);
+        return;
+    }
+
+    auto payload = new OutgoingPayload;
+    payload->buff = buff;
+    payload->len = len;
+    payload->kind = PayloadKind::Buff;
+
+    push_payload(payload);
+}
+
 void Connection::send_strliteral(const char *cstr) {
-    auto payload = new struct outgoing_payload;
+    auto payload = new OutgoingPayload;
     payload->cstr = cstr;
     payload->len = strlen(cstr);
-    payload->string_literal = true;
+    payload->kind = PayloadKind::StringLiteral;
 
-    {
-        std::lock_guard<std::mutex> guard(m_tx_queue_m);
-        m_tx_queue.push_front(payload);
-    }
-    m_tx_queue_cv.notify_one();
+    push_payload(payload);
+}
+
+void Connection::send_message(std::shared_ptr<msg::Message> msg) {
+    auto payload = new OutgoingPayload;
+    auto shared_ptr = new std::shared_ptr<msg::Message>;
+    *shared_ptr = msg;
+    payload->msg = shared_ptr;
+    payload->kind = PayloadKind::Message;
+
+    push_payload(payload);
 }
 
 void Connection::terminate() {

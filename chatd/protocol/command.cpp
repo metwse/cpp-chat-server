@@ -1,8 +1,12 @@
 #include <chatd/protocol/protocol.hpp>
 
 
-void msg::DirectMessage::send(Connection &) {}
+void cmd::Subscribe::operator()(Connection *, ConnectionPool *) {}
 
-void msg::GroupMessage::send(Connection &) {}
+void cmd::Unsubscribe::operator()(Connection *, ConnectionPool *) {}
 
-void msg::GlobalMessage::send(Connection &) {}
+void cmd::Delete::operator()(Connection *, ConnectionPool *) {}
+
+void cmd::Logout::operator()(Connection *, ConnectionPool *) {}
+
+void cmd::ListUsers::operator()(Connection *, ConnectionPool *) {}

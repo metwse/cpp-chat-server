@@ -60,10 +60,17 @@ public:
      */
     void send_strliteral(const char *cstring);
 
+    /**
+     * send_message() - Send a message to the client.
+     */
+    void send_message(std::shared_ptr<msg::Message> msg);
+
     std::shared_ptr<User> user { nullptr };
 
 private:
     friend ConnectionPool;
+
+    class OutgoingPayload;
 
 #ifdef _DEBUG
     friend void test();
@@ -78,6 +85,8 @@ private:
      * it with the given connection pool.
      */
     Connection(struct tcp_stream stream, ConnectionPool *pool);
+
+    void push_payload(OutgoingPayload *);
 
     /**
      * rx_thread() - Reception thread function.
