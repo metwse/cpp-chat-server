@@ -100,6 +100,9 @@ void cmd::Unsubscribe::operator()(Connection *c, ConnectionPool *pool) {
 
 void cmd::Delete::operator()(Connection *, ConnectionPool *) {}
 
-void cmd::Logout::operator()(Connection *, ConnectionPool *) {}
+void cmd::Logout::operator()(Connection *c, ConnectionPool *) {
+    c->send_strliteral("SRV: Bye!\n");
+    c->gracefully_terminate();
+}
 
 void cmd::ListUsers::operator()(Connection *, ConnectionPool *) {}

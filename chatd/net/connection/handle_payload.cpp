@@ -26,8 +26,10 @@ void Connection::handle_payload(char *buff, size_t len) {
     if (authenticated) {
         auto payload = Payload::parse(buff, len);
 
-        if (!payload)
+        if (!payload) {
+            send_strliteral("ERR: Invalid command!\n");
             return;
+        }
 
         if (payload->kind() == Payload::Kind::Command) {
             auto cmd = dynamic_cast<cmd::Command *>(payload);
@@ -69,9 +71,15 @@ void Connection::handle_payload(char *buff, size_t len) {
                         }
                     }
                 }
-            }
-            else if (typeid(*payload) == typeid(msg::GlobalMessage)) {
+
+                if (!is_in_channel)
+                    send_strliteral("ERR: Channel not found!\n");
+            } else if (typeid(*payload) == typeid(msg::GlobalMessage)) {
                 std::lock_guard<std::mutex> guard(user->channels_m);
+
+                if (!user->channels.get_size())
+                    send_strliteral("ERR: You are not subscribed to any "
+                                    "channel!\n");
 
                 for (size_t i = 0; i < user->channels.get_size(); i++) {
                     auto channel = *(std::shared_ptr<Channel> *)
