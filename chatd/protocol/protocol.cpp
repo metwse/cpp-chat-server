@@ -4,6 +4,6 @@
 
 
 User::~User() {
-    free(username);
+    free(name);
     free(password);
 }

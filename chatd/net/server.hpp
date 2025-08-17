@@ -71,8 +71,15 @@ class ConnectionPool {
 public:
     ConnectionPool(ConnectionPool &) = delete;
 
-    std::shared_ptr<User> get_user(const char *username);
-    bool push_user(std::shared_ptr<User> *);
+    template<typename T>
+    std::shared_ptr<T> get(const char *name);
+
+    template<typename T>
+    bool push(std::shared_ptr<T> *);
+
+    template<typename T>
+    bool remove(const char *name);
+
 
 private:
     friend Server;
@@ -115,6 +122,11 @@ private:
     Vec m_users;
     std::mutex m_users_m;
 
+    /**
+     * @m_channels: Container holding channels
+     */
+    Vec m_channels;
+    std::mutex m_channels_m;
 
     /**
      * @m_gc_thread: Garbage collector thread handle
@@ -130,5 +142,7 @@ private:
     bool m_is_running { true };
 };
 
+
+#include <chatd/net/server/connection_pool.ipp>
 
 #endif

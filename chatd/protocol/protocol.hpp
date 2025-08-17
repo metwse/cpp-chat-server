@@ -19,16 +19,31 @@ class ConnectionPool;
  */
 class User {
 public:
-    User(char *username_, char *password_)
-        : username { username_ }, password { password_ }
+    User(char *name_, char *password_)
+        : name { name_ }, password { password_ }
     {}
 
     ~User();
 
-    char *username;
+    char *name;
     char *password;
 
     Vec channels;
+};
+
+/**
+ * class Channel - Channel data
+ */
+class Channel {
+public:
+    Channel(char *name_, char *password_)
+        : name { name_ }, password { password_ }
+    {}
+
+    char *name;
+    char *password;
+
+    Vec users;
 };
 
 /**

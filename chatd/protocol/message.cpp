@@ -13,7 +13,7 @@ extern "C" {
 
 bool msg::DirectMessage::send(struct tcp_stream &s) {
     UNWRAP(tcp_stream_write(&s, "@", 1));
-    UNWRAP(tcp_stream_write(&s, user->username, strlen(user->username)));
+    UNWRAP(tcp_stream_write(&s, user->name, strlen(user->name)));
     UNWRAP(tcp_stream_write(&s, ": ", 2));
     UNWRAP(tcp_stream_write(&s, content, strlen(content)));
     UNWRAP(tcp_stream_write(&s, "\n", 1));

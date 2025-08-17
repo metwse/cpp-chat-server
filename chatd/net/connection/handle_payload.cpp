@@ -46,7 +46,7 @@ void Connection::handle_payload(char *buff, size_t len) {
                 for (size_t i = 0; i < m_pool->m_conns.get_size(); i++) {
                     auto conn = *(std::shared_ptr<Connection> *)
                         m_pool->m_conns[i];
-                    if (conn->user && strcmp(conn->user->username, dm->to) == 0)
+                    if (conn->user && strcmp(conn->user->name, dm->to) == 0)
                         conn->send_message(msg);
                 }
             }
@@ -107,7 +107,7 @@ void Connection::handle_payload(char *buff, size_t len) {
                     auto new_user = std::make_shared<User>(username, password);
                     auto new_user_heap = new std::shared_ptr<User>;
                     *new_user_heap = new_user;
-                    if (m_pool->push_user(new_user_heap)) {
+                    if (m_pool->push<User>(new_user_heap)) {
                         send_strliteral("SRV: Hello @");
                         send_strliteral(username);
                         send_strliteral("!\n");
@@ -123,7 +123,7 @@ void Connection::handle_payload(char *buff, size_t len) {
                     gracefully_terminate();
                 }
             } else {
-                auto existing_user = m_pool->get_user(username);
+                auto existing_user = m_pool->get<User>(username);
                 if (existing_user) {
                     if (!strcmp(existing_user->password, password)) {
                         send_strliteral("SRV: Hello @");
