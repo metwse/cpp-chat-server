@@ -142,7 +142,6 @@ private:
     bool m_is_running { true };
 };
 
-
 #include <chatd/net/server/connection_pool.ipp>
 
 #endif

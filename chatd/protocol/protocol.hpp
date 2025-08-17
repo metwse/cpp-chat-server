@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <mutex>
 
 
 #define WELCOME_MESSAGE "Welcome to the chat relay!\n" \
@@ -29,6 +30,7 @@ public:
     char *password;
 
     Vec channels;
+    std::mutex channels_m;
 };
 
 /**
@@ -40,10 +42,13 @@ public:
         : name { name_ }, password { password_ }
     {}
 
+    ~Channel();
+
     char *name;
     char *password;
 
     Vec users;
+    std::mutex users_m;
 };
 
 /**

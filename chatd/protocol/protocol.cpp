@@ -7,3 +7,8 @@ User::~User() {
     free(name);
     free(password);
 }
+
+Channel::~Channel() {
+    delete[] name;
+    delete[] password;
+}
