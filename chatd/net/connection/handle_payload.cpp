@@ -34,21 +34,58 @@ void Connection::handle_payload(char *buff, size_t len) {
             (*cmd)(this, this->m_pool);
             delete payload;
         } else if (payload->kind() == Payload::Kind::Message) {
-            auto msg = std::shared_ptr<msg::Message>(
-                dynamic_cast<msg::Message *>(payload)
-            );
+            auto msg = dynamic_cast<msg::Message *>(payload);
             msg->user = this->user;
 
-            std::lock_guard<std::mutex> guard(m_pool->m_conns_m);
             if (typeid(*payload) == typeid(msg::DirectMessage)) {
-                auto dm = dynamic_cast<msg::DirectMessage *>(payload);
+                auto dmsg = dynamic_cast<msg::DirectMessage *>(payload);
+                m_pool->send_msg(dmsg->to, msg);
+            }
+            else if (typeid(*payload) == typeid(msg::GroupMessage)) {
+                auto gmsg = dynamic_cast<msg::GroupMessage *>(payload);
+                auto channel = m_pool->get<Channel>(gmsg->to);
 
-                for (size_t i = 0; i < m_pool->m_conns.get_size(); i++) {
-                    auto conn = *(std::shared_ptr<Connection> *)
-                        m_pool->m_conns[i];
-                    if (conn->user && strcmp(conn->user->name, dm->to) == 0)
-                        conn->send_message(msg);
+                bool is_in_channel = false;
+
+                if (channel) {
+                    std::lock_guard<std::mutex> guard(channel->users_m);
+                    for (size_t i = 0; i < channel->users.get_size(); i++) {
+                        auto ch_user = *(std::shared_ptr<User> *)
+                            channel->users[i];
+
+                        if (!strcmp(user->name, ch_user->name)) {
+                            is_in_channel = true;
+                            break;
+                        }
+                    }
+
+                    if (is_in_channel) {
+                        for (size_t i = 0; i < channel->users.get_size(); i++) {
+                            auto ch_user = *(std::shared_ptr<User> *)
+                                channel->users[i];
+
+                            if (strcmp(user->name, ch_user->name))
+                                m_pool->send_msg(ch_user->name, msg);
+                        }
+                    }
                 }
+            }
+            else if (typeid(*payload) == typeid(msg::GlobalMessage)) {
+                std::lock_guard<std::mutex> guard(user->channels_m);
+
+                for (size_t i = 0; i < user->channels.get_size(); i++) {
+                    auto channel = *(std::shared_ptr<Channel> *)
+                        user->channels[i];
+
+                    for (size_t j = 0; j < channel->users.get_size(); j++) {
+                        auto ch_user = *(std::shared_ptr<User> *)
+                            channel->users[j];
+
+                        if (strcmp(user->name, ch_user->name))
+                            m_pool->send_msg(ch_user->name, msg);
+                    }
+                }
+
             }
         }
     } else {

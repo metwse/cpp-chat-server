@@ -66,3 +66,17 @@ void ConnectionPool::push(struct tcp_stream stream) {
         m_conns.push(conn);
     }
 }
+
+void ConnectionPool::send_msg(const char *username, msg::Message *payload) {
+    auto msg = std::shared_ptr<msg::Message>(
+        dynamic_cast<msg::Message *>(payload)
+    );
+
+    std::lock_guard<std::mutex> guard(m_conns_m);
+
+    for (size_t i = 0; i < m_conns.get_size(); i++) {
+        auto conn = *(std::shared_ptr<Connection> *) m_conns[i];
+        if (conn->user && strcmp(conn->user->name, username) == 0)
+            conn->send_message(msg);
+    }
+}

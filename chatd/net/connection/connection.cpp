@@ -98,10 +98,13 @@ void Connection::tx_thread(std::shared_ptr<Connection> self) {
             if ((
                     payload->kind == PayloadKind::Message &&
                     !(*payload->msg)->send(self->m_stream)
-                ) || tcp_stream_write(&self->m_stream,
+                ) || (
+                    payload->kind != PayloadKind::Message &&
+                    tcp_stream_write(&self->m_stream,
                                  payload->kind == PayloadKind::StringLiteral ?
-                                     payload->cstr : payload->buff,
-                                 payload->len)) {
+                                 payload->cstr : payload->buff,
+                                 payload->len)
+                )) {
                 self->m_is_ready = false;
                 terminated = true;
             }

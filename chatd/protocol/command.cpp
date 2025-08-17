@@ -37,7 +37,7 @@ void cmd::Subscribe::operator()(Connection *c, ConnectionPool *pool) {
         char *cpy_password = new char[strlen(password) + 1];
         strcpy(cpy_name, name);
         cpy_name[strlen(name)] = '\0';
-        strcpy(cpy_password, name);
+        strcpy(cpy_password, password);
         cpy_password[strlen(password)] = '\0';
 
         auto new_channel = std::make_shared<Channel>(cpy_name, cpy_password);
@@ -54,7 +54,7 @@ void cmd::Subscribe::operator()(Connection *c, ConnectionPool *pool) {
         }
     }
 
-    if (joined) {
+    if (*joined) {
         user->channels.push(joined);
         auto user_ref = new std::shared_ptr<User>();
         *user_ref = user;

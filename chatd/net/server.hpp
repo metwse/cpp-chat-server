@@ -80,7 +80,6 @@ public:
     template<typename T>
     bool remove(const char *name);
 
-
 private:
     friend Server;
     friend Connection;
@@ -107,6 +106,8 @@ private:
      * to the pool for management. The connection will be handled in a thread.
      */
     void push(struct tcp_stream stream);
+
+    void send_msg(const char *username, msg::Message *msg);
 
     /**
      * @m_conns: Container holding active connections
