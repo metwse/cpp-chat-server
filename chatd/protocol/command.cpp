@@ -98,11 +98,94 @@ void cmd::Unsubscribe::operator()(Connection *c, ConnectionPool *pool) {
     c->send_strliteral("ERR: You not in the channel!\n");
 }
 
-void cmd::Delete::operator()(Connection *, ConnectionPool *) {}
+void cmd::Delete::operator()(Connection *c, ConnectionPool *pool) {
+    auto name = (char *) args[0];
+
+    auto user = c->user;
+    std::shared_ptr<Channel> channel;
+    bool is_in_channel = false;
+
+    {
+        std::lock_guard<std::mutex> gurad(user->channels_m);
+
+        for (size_t i = 0; i < user->channels.get_size(); i++) {
+            channel = *(std::shared_ptr<Channel> *) user->channels[i];
+            std::lock_guard<std::mutex> ch_guard(channel->users_m);
+
+            if (!strcmp(channel->name, name)) {
+                is_in_channel = true;
+                break;
+            }
+        }
+    }
+
+    if (is_in_channel) {
+        std::lock_guard<std::mutex> ch_guard(channel->users_m);
+
+        for (size_t i = 0; i < channel->users.get_size(); i++) {
+            auto ch_user = *(std::shared_ptr<User> *) channel->users[i];
+            std::lock_guard<std::mutex> usr_guard(ch_user->channels_m);
+
+            for (size_t j = 0; j < user->channels.get_size(); j++) {
+                auto user_ch = *(std::shared_ptr<Channel> *) ch_user->channels[j];
+
+                if (!strcmp(channel->name, name)) {
+                    ch_user->channels.remove(j);
+                    break;
+                }
+            }
+        }
+
+        pool->remove<Channel>(name);
+
+        c->send_strliteral("SRV: Channel deleted.\n");
+    } else {
+        c->send_strliteral("ERR: You not in the channel!\n");
+    }
+}
 
 void cmd::Logout::operator()(Connection *c, ConnectionPool *) {
     c->send_strliteral("SRV: Bye!\n");
     c->gracefully_terminate();
 }
 
-void cmd::ListUsers::operator()(Connection *, ConnectionPool *) {}
+void cmd::ListUsers::operator()(Connection *c, ConnectionPool *) {
+    auto name = (char *) args[0];
+
+    auto user = c->user;
+    std::shared_ptr<Channel> channel;
+    std::lock_guard<std::mutex> gurad(user->channels_m);
+    bool is_in_channel = false;
+
+    for (size_t i = 0; i < user->channels.get_size(); i++) {
+        channel = *(std::shared_ptr<Channel> *) user->channels[i];
+        std::lock_guard<std::mutex> ch_guard(channel->users_m);
+
+        if (!strcmp(channel->name, name)) {
+            is_in_channel = true;
+            break;
+        }
+    }
+
+    if (is_in_channel) {
+        std::lock_guard<std::mutex> ch_guard(channel->users_m);
+
+        c->send_strliteral("SRV: Users subscribed to the channel: ");
+
+        for (size_t i = 0; i < channel->users.get_size(); i++) {
+            auto cuser = *(std::shared_ptr<User> *) channel->users[i];
+            auto name_len = strlen(cuser->name) * sizeof(char);
+            auto name = (char *) malloc(name_len);
+
+            strcpy(name, cuser->name);
+            c->send(name, name_len);
+
+            if (i != channel->users.get_size() - 1)
+                c->send_strliteral(", ");
+        }
+
+        c->send_strliteral("\n");
+    } else {
+        c->send_strliteral("ERR: You not in the channel!\n");
+    }
+}
